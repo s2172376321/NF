@@ -5,41 +5,17 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ngrok 連結列表</title>
   <style>
-    body {
-      background: #f4f6fb;
-      font-family: 'Segoe UI','Microsoft JhengHei', Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-    .container {
-      max-width: 480px;
-      margin: 60px auto;
-      background: #fff;
-      border-radius: 18px;
-      box-shadow: 0 8px 32px rgba(60,72,88,.18);
-      padding: 40px 32px 32px;
-      text-align: center;
-    }
-    h2 { color:#2d3a4b;margin-bottom:32px;font-size:2.2em;letter-spacing:2px; }
-    .btn-list{ list-style:none;padding:0;margin:0; }
-    .btn-list li{ margin-bottom:24px; }
-    .ngrok-btn{
-      display:block;width:100%;padding:22px 0;font-size:1.3em;font-weight:600;color:#fff;
-      background:linear-gradient(90deg,#3a7bd5 0%,#00d2ff 100%);
-      border:none;border-radius:12px;box-shadow:0 4px 16px rgba(58,123,213,.12);
-      text-decoration:none;transition:background .2s,transform .2s,box-shadow .2s;
-      letter-spacing:1px;
-    }
-    .ngrok-btn:hover,.ngrok-btn:focus{
-      background:linear-gradient(90deg,#005c97 0%,#363795 100%);
-      transform:translateY(-2px) scale(1.03);
-      box-shadow:0 8px 24px rgba(58,123,213,.18);outline:none;
-    }
-    /* 領用連結清單樣式 */
-    #claimLinks{ margin-top:24px;text-align:left;padding-left:0; }
-    #claimLinks li{ margin-bottom:12px;list-style:disc inside;color:#2d3a4b;font-size:1em; }
-    #claimLinks a{ color:#005c97;text-decoration:none;font-weight:600; }
-    #claimLinks a:hover{ text-decoration:underline; }
+    body{background:#f4f6fb;font-family:'Segoe UI','Microsoft JhengHei',Arial,sans-serif;margin:0;padding:0;}
+    .container{max-width:480px;margin:60px auto;background:#fff;border-radius:18px;box-shadow:0 8px 32px rgba(60,72,88,.18);padding:40px 32px 32px;text-align:center;}
+    h2{color:#2d3a4b;margin-bottom:32px;font-size:2.2em;letter-spacing:2px;}
+    .btn-list{list-style:none;padding:0;margin:0;}
+    .btn-list li{margin-bottom:24px;}
+    .ngrok-btn{display:block;width:100%;padding:22px 0;font-size:1.3em;font-weight:600;color:#fff;background:linear-gradient(90deg,#3a7bd5 0%,#00d2ff 100%);border:none;border-radius:12px;box-shadow:0 4px 16px rgba(58,123,213,.12);text-decoration:none;transition:background .2s,transform .2s,box-shadow .2s;letter-spacing:1px;}
+    .ngrok-btn:hover,.ngrok-btn:focus{background:linear-gradient(90deg,#005c97 0%,#363795 100%);transform:translateY(-2px) scale(1.03);box-shadow:0 8px 24px rgba(58,123,213,.18);outline:none;}
+    #claimLinks{margin-top:24px;text-align:left;padding-left:0;}
+    #claimLinks li{margin-bottom:12px;list-style:disc inside;color:#2d3a4b;font-size:1em;}
+    #claimLinks a{color:#005c97;text-decoration:none;font-weight:600;}
+    #claimLinks a:hover{text-decoration:underline;}
   </style>
 </head>
 <body>
@@ -52,7 +28,7 @@
       <li><a class="ngrok-btn" href="https://2966-218-34-110-52.ngrok-free.app" target="_blank">採收資料 &amp; 資材使用</a></li>
     </ul>
 
-    <!-- 新增：顯示領用連結 -->
+    <!-- 顯示領用連結按鈕 -->
     <button id="showLinksBtn" class="ngrok-btn" style="margin-top:12px;padding:18px 0;">
       顯示領用連結
     </button>
@@ -62,7 +38,6 @@
   </div>
 
   <script>
-    // 後端 API 網址
     const BASE_URL = 'https://6ca8-218-34-110-52.ngrok-free.app';
 
     const btn  = document.getElementById('showLinksBtn');
@@ -72,7 +47,9 @@
       btn.disabled   = true;
       btn.textContent = '載入中…';
       try {
-        const res = await fetch(`${BASE_URL}/api/inventory/claim-links`);
+        const res = await fetch(`${BASE_URL}/api/inventory/claim-links`, {
+          headers: { 'X-Ngrok-Skip-Browser-Warning': 'true' }   // ★ 新增標頭
+        });
         if (!res.ok) throw new Error('無法取得資料');
         const data = await res.json(); // [{id,text,link}, …]
 
@@ -84,7 +61,7 @@
             const li = document.createElement('li');
             const a  = document.createElement('a');
             a.href = item.link;
-            a.textContent = item.text;               // 商品名稱+有效期+備註
+            a.textContent = item.text;   // 商品名稱+有效期+備註
             a.target = '_blank';
             li.appendChild(a);
             list.appendChild(li);
