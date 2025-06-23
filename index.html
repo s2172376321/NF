@@ -191,7 +191,7 @@
         <td><button class="btn btn-sm btn-danger" onclick="removeItem(${i})">刪除</button></td></tr>`).join('');
   window.removeItem=i=>{details.splice(i,1);renderTable();$('totalSum').textContent='總計：'+details.reduce((s,d)=>s+d.subtotal,0)+' 元';};
 
-  const modal=new bootstrap.Modal($('#uploadModal'));
+  const modal=new bootstrap.Modal($('uploadModal'));
 
   $('finishBtn').onclick=()=>{
     if(!details.length)return alert('尚未新增任何商品！');
