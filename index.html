@@ -37,43 +37,77 @@
     <ul id="claimLinks"></ul>
   </div>
 
-  <script>
-    const BASE_URL = 'https://6ca8-218-34-110-52.ngrok-free.app';
+<script>
+  const BASE_URL = 'https://6ca8-218-34-110-52.ngrok-free.app';
 
-    const btn  = document.getElementById('showLinksBtn');
-    const list = document.getElementById('claimLinks');
+  const btn  = document.getElementById('showLinksBtn');
+  const list = document.getElementById('claimLinks');
 
-    btn.addEventListener('click', async () => {
-      btn.disabled   = true;
-      btn.textContent = '載入中…';
-      try {
-        const res = await fetch(`${BASE_URL}/api/inventory/claim-links`, {
-          headers: { 'X-Ngrok-Skip-Browser-Warning': 'true' }   // ★ 新增標頭
+  btn.addEventListener('click', async () => {
+    btn.disabled   = true;
+    btn.textContent = '載入中…';
+    try {
+      // 以 query string 跳過 ngrok warning
+      const res = await fetch(`${BASE_URL}/api/inventory/claim-links?ngrok-skip-browser-warning=true`);
+      if (!res.ok) throw new Error('無法取得資料');
+      const data = await res.json();     // [{id,text,link}, …]
+
+      list.innerHTML = '';
+      if (data.length === 0) {
+        list.innerHTML = '<li>目前沒有庫存資料</li>';
+      } else {
+        data.forEach(item => {
+          const li = document.createElement('li');
+          const a  = document.createElement('a');
+          a.href = item.link;
+          a.textContent = item.text;
+          a.target = '_blank';
+          li.appendChild(a);
+          list.appendChild(li);
         });
-        if (!res.ok) throw new Error('無法取得資料');
-        const data = await res.json(); // [{id,text,link}, …]
-
-        list.innerHTML = '';
-        if (data.length === 0) {
-          list.innerHTML = '<li>目前沒有庫存資料</li>';
-        } else {
-          data.forEach(item => {
-            const li = document.createElement('li');
-            const a  = document.createElement('a');
-            a.href = item.link;
-            a.textContent = item.text;   // 商品名稱+有效期+備註
-            a.target = '_blank';
-            li.appendChild(a);
-            list.appendChild(li);
-          });
-        }
-      } catch (err) {
-        alert('載入失敗：' + err.message);
-      } finally {
-        btn.disabled   = false;
-        btn.textContent = '顯示領用連結';
       }
-    });
-  </script>
-</body>
+    } catch (err) {
+      alert('載入失敗：' + err.message);
+    } finally {
+      btn.disabled   = false;
+      btn.textContent = '顯示領用連結';
+    }
+  });
+</script><script>
+  const BASE_URL = 'https://6ca8-218-34-110-52.ngrok-free.app';
+
+  const btn  = document.getElementById('showLinksBtn');
+  const list = document.getElementById('claimLinks');
+
+  btn.addEventListener('click', async () => {
+    btn.disabled   = true;
+    btn.textContent = '載入中…';
+    try {
+      // 以 query string 跳過 ngrok warning
+      const res = await fetch(`${BASE_URL}/api/inventory/claim-links?ngrok-skip-browser-warning=true`);
+      if (!res.ok) throw new Error('無法取得資料');
+      const data = await res.json();     // [{id,text,link}, …]
+
+      list.innerHTML = '';
+      if (data.length === 0) {
+        list.innerHTML = '<li>目前沒有庫存資料</li>';
+      } else {
+        data.forEach(item => {
+          const li = document.createElement('li');
+          const a  = document.createElement('a');
+          a.href = item.link;
+          a.textContent = item.text;
+          a.target = '_blank';
+          li.appendChild(a);
+          list.appendChild(li);
+        });
+      }
+    } catch (err) {
+      alert('載入失敗：' + err.message);
+    } finally {
+      btn.disabled   = false;
+      btn.textContent = '顯示領用連結';
+    }
+  });
+</script></body>
 </html>
