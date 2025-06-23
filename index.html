@@ -55,7 +55,7 @@
 
     <!-- 動態單位 -->
     <div class="mb-3" style="max-width:200px;">
-      <label class="form-label" id="weightLabel">重量 / －</label>
+      <label class="form-label" id="weightLabel">單位 / －</label>
       <input id="prodWeight" type="number" min="0" step="0.1" class="form-control">
     </div>
     <div id="unitPriceTip" class="text-muted mb-3"></div>
@@ -66,7 +66,7 @@
     <div class="table-responsive">
       <table class="table table-bordered align-middle">
         <thead class="table-light">
-          <tr><th>#</th><th>商品名稱</th><th>單價</th><th>重量</th><th>小計</th><th></th></tr>
+          <tr><th>#</th><th>商品名稱</th><th>單價</th><th>單位</th><th>小計</th><th></th></tr>
         </thead>
         <tbody id="detailTableBody"></tbody>
       </table>
@@ -165,7 +165,7 @@
         kwInput.dataset.unit  = p['單位'];
 
         // 動態顯示單位與單價
-        $('weightLabel').textContent = '重量 / ' + p['單位'];
+        $('weightLabel').textContent = '單位 / ' + p['單位'];
         $('unitPriceTip').textContent = `單價：${p['售價']} 元／${p['單位']}`;
 
         list.innerHTML='';
@@ -187,7 +187,7 @@
     // reset
     kw.value='';kw.dataset.code='';kw.dataset.price='';kw.dataset.cat='';kw.dataset.unit='';
     $('prodWeight').value='';
-    $('weightLabel').textContent='重量 / －';
+    $('weightLabel').textContent='單位 / －';
     $('unitPriceTip').textContent='';
   };
 
@@ -287,7 +287,7 @@
   function buildTable(arr){
     return `<table class="table table-sm table-bordered mb-0">
       <thead class="table-light"><tr><th>#</th><th>商品編號</th><th>品名</th><th>中分類</th>
-        <th>用途</th><th>單位</th><th>單價</th><th>重量</th><th>小計</th></tr></thead>
+        <th>用途</th><th>單位</th><th>單價</th><th>單位</th><th>小計</th></tr></thead>
       <tbody>${arr.map((d,i)=>`<tr><td>${i+1}</td><td>${d.code}</td><td>${d.name}</td>
         <td>${d.cat}</td><td>${d.purpose||'-'}</td><td>${d.unit||'-'}</td><td>${d.price}</td>
         <td>${d.weight}</td><td>${d.subtotal}</td></tr>`).join('')}</tbody></table>`;
