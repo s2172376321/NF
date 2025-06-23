@@ -25,10 +25,8 @@
     .big-btn:hover,.big-btn:focus{background:linear-gradient(90deg,#005c97 0%,#363795 100%);
                                   transform:translateY(-2px) scale(1.03);box-shadow:0 8px 24px rgba(58,123,213,.18);}
     .group-title{margin:24px 0 8px;font-weight:700;color:#fa541c;}
-    ul.links{list-style:none;padding-left:0;margin:0 0 8px 0;}
-    ul.links li{margin-bottom:8px;}
-    ul.links a{color:#005c97;text-decoration:none;font-weight:600;}
-    ul.links a:hover{text-decoration:underline;}
+    ul.links{list-style:none;padding-left:0;margin:0 0 8px 0;} ul.links li{margin-bottom:8px;}
+    ul.links a{color:#005c97;text-decoration:none;font-weight:600;} ul.links a:hover{text-decoration:underline;}
     #suggestList{position:absolute;z-index:10;width:100%;}
   </style>
 </head>
@@ -66,8 +64,8 @@
       <table class="table table-bordered align-middle">
         <thead class="table-light">
           <tr>
-            <th>#</th><th>明細編號</th><th>商品編號</th><th>品名</th><th>中分類</th><th>單價</th>
-            <th>重量</th><th>小計</th><th></th>
+            <th>#</th><th>明細編號</th><th>商品編號</th><th>品名</th><th>中分類</th>
+            <th>單價</th><th>重量</th><th>小計</th><th></th>
           </tr>
         </thead>
         <tbody id="detailTableBody"></tbody>
@@ -125,8 +123,8 @@
   <!-- ================== JavaScript ================== -->
   <script>
   /* ---------- 區塊 1：ngrok 連結 ---------- */
-  const BASE_URL   = 'https://6ca8-218-34-110-52.ngrok-free.app';
-  const showBtn    = document.getElementById('showLinksBtn');
+  const BASE_URL = 'https://6ca8-218-34-110-52.ngrok-free.app';
+  const showBtn  = document.getElementById('showLinksBtn');
   const resultArea = document.getElementById('resultArea');
 
   showBtn.addEventListener('click', async () => {
@@ -142,12 +140,14 @@
         else if(i.text.includes('業務包')) groups['業務包'].push(i);
         else groups['其他'].push(i);
       });
-      resultArea.innerHTML='';                                  
+      resultArea.innerHTML='';
       Object.keys(groups).forEach(k=>{
         if(!groups[k].length) return;
-        resultArea.insertAdjacentHTML('beforeend',`<div class="group-title">${k}</div><ul class="links">
-          ${groups[k].map(i=>`<li><a target="_blank" href="${i.link}">${i.text.replace(/\+/g,'  ')}</a></li>`).join('')}
-        </ul>`);
+        resultArea.insertAdjacentHTML('beforeend',`
+          <div class="group-title">${k}</div>
+          <ul class="links">
+            ${groups[k].map(i=>`<li><a target="_blank" href="${i.link}">${i.text.replace(/\+/g,'  ')}</a></li>`).join('')}
+          </ul>`);
       });
     }catch(e){ alert('載入失敗：'+e.message); }
     finally{ showBtn.disabled=false; showBtn.textContent='顯示領用連結'; }
@@ -169,21 +169,28 @@
       const a=document.createElement('a');
       a.className='list-group-item list-group-item-action';
       a.textContent=`${p['規    格']}（${p['售價']}元）`;
-      a.onclick=()=>{Object.assign($('prodKeyword'),{
-        value:p['規    格'],dataset:{code:p['商品編號'],price:p['售價'],cat:p['中分類']}
-      }); list.innerHTML='';};
+      a.onclick=()=>{
+        const kwInput = $('prodKeyword');
+        kwInput.value = p['規    格'];
+        kwInput.dataset.code  = p['商品編號'];
+        kwInput.dataset.price = p['售價'];
+        kwInput.dataset.cat   = p['中分類'];
+        list.innerHTML='';
+      };
       list.appendChild(a);
     });
   });
 
   $('addDetailBtn').onclick=()=>{
-    const kw=$('prodKeyword'),code=kw.dataset.code,name=kw.value.trim(),price=parseFloat(kw.dataset.price),
-          cat=kw.dataset.cat,weight=parseFloat($('prodWeight').value);
+    const kw=$('prodKeyword'),code=kw.dataset.code,name=kw.value.trim(),
+          price=parseFloat(kw.dataset.price),cat=kw.dataset.cat,
+          weight=parseFloat($('prodWeight').value);
     if(!code||!name||!weight) return alert('請完整輸入');
     const tmpId=crypto.randomUUID().slice(0,8),subtotal=price*weight;
     details.push({id:tmpId,code,name,cat,price,weight,subtotal});
     renderTable();
-    kw.value='';kw.dataset.code='';kw.dataset.price='';kw.dataset.cat='';$('prodWeight').value='';
+    kw.value=''; kw.dataset.code=''; kw.dataset.price=''; kw.dataset.cat='';
+    $('prodWeight').value='';
   };
 
   function renderTable(){
@@ -195,24 +202,19 @@
   }
   window.removeItem=i=>{details.splice(i,1);renderTable();};
 
-  // Bootstrap Modal 物件
   const modal= new bootstrap.Modal(document.getElementById('uploadModal'));
 
   $('finishBtn').onclick=()=>{
     if(!details.length) return alert('尚未新增任何商品！');
     const uid='D'+dayjs().format('YYMMDD')+Math.floor(Math.random()*900+100);
-    details.forEach((d,idx)=>d.id=uid+'-'+(idx+1));      // 更新正式編號
-    // 暫存於全域，待 modal 儲存
+    details.forEach((d,idx)=>d.id=uid+'-'+(idx+1));
     window.__CURRENT_UID__=uid;
     window.__CURRENT_DETS__=structuredClone(details);
-    // 清空畫面
     $('uidBox').textContent='此明細編號：'+uid;
     details.length=0; renderTable(); $('totalSum').textContent='';
-    // 顯示 modal
     $('purposeSelect').value=''; $('imgInput').value=''; modal.show();
   };
 
-  // Modal 儲存
   $('modalSaveBtn').onclick=()=>{
     const purpose=$('purposeSelect').value;
     if(!purpose) return alert('請選擇用途/部門！');
@@ -223,7 +225,7 @@
       arr.forEach(o=>{o.purpose=purpose; if(img64) o.image=img64;});
       store[uid]=arr;
       localStorage.setItem(LOCAL_KEY,JSON.stringify(store));
-      modal.hide(); alert('已儲存至 localStorage，可在「查找明細」搜尋。');
+      modal.hide(); alert('已儲存，可於「查找明細」搜尋。');
     };
     if(file){
       const reader=new FileReader();
@@ -234,15 +236,15 @@
 
   /* ---------- 區塊 3：查找明細 ---------- */
   $('searchBtn').onclick=()=>{
-    const kw=$('searchInput').value.trim(),resultDiv=$('searchResult');
+    const kw=$('searchInput').value.trim(),div=$('searchResult');
     if(!kw) return;
     const store=JSON.parse(localStorage.getItem(LOCAL_KEY)||'{}');
-    resultDiv.innerHTML='';
-    if(store[kw]) {createTable(kw,store[kw]); return;}
+    div.innerHTML='';
+    if(store[kw]){createTable(kw,store[kw]); return;}
     let found=[];Object.entries(store).forEach(([id,arr])=>{
       arr.forEach(it=>{if(it.name.includes(kw)||it.code.includes(kw)) found.push({...it,mainId:id});});
     });
-    if(!found.length){resultDiv.textContent='查無資料';return;}
+    if(!found.length){div.textContent='查無資料';return;}
     const grp={};found.forEach(i=>(grp[i.mainId]=grp[i.mainId]||[]).push(i));
     Object.keys(grp).forEach(id=>createTable(id,grp[id]));
   };
@@ -250,8 +252,8 @@
     $('searchResult').insertAdjacentHTML('beforeend',`
       <h5 class="mt-3">明細編號：${id}</h5>
       <table class="table table-sm table-bordered mb-4">
-        <thead class="table-light"><tr><th>#</th><th>商品編號</th><th>品名</th>
-          <th>中分類</th><th>用途</th><th>單價</th><th>重量</th><th>小計</th></tr></thead>
+        <thead class="table-light"><tr><th>#</th><th>商品編號</th><th>品名</th><th>中分類</th>
+          <th>用途</th><th>單價</th><th>重量</th><th>小計</th></tr></thead>
         <tbody>${arr.map((d,i)=>`<tr><td>${i+1}</td><td>${d.code}</td><td>${d.name}</td>
           <td>${d.cat}</td><td>${d.purpose||'-'}</td><td>${d.price}</td>
           <td>${d.weight}</td><td>${d.subtotal}</td></tr>`).join('')}</tbody></table>`);
