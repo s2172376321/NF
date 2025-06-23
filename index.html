@@ -4,9 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ngrok 連結 + 建立商品明細</title>
-  <!-- Bootstrap：快速排版 -->
+
+  <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- dayjs：產生唯一編號時用 -->
+  <!-- dayjs：產生唯一編號 -->
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
   <!-- PapaParse：解析 CSV -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -19,7 +20,8 @@
     /* 共用大按鈕 */
     .big-btn{display:block;width:100%;padding:22px 0;font-size:1.25em;font-weight:600;color:#fff;
              background:linear-gradient(90deg,#3a7bd5 0%,#00d2ff 100%);border:none;border-radius:12px;
-             box-shadow:0 4px 16px rgba(58,123,213,.12);text-decoration:none;transition:.2s;letter-spacing:1px;}
+             box-shadow:0 4px 16px rgba(58,123,213,.12);text-decoration:none;transition:.2s;
+             letter-spacing:1px;text-align:center;}   /* ← 置中 */
     .big-btn:hover,.big-btn:focus{background:linear-gradient(90deg,#005c97 0%,#363795 100%);
                                   transform:translateY(-2px) scale(1.03);box-shadow:0 8px 24px rgba(58,123,213,.18);}
     .group-title{margin:24px 0 8px;font-weight:700;color:#fa541c;}
@@ -33,7 +35,7 @@
 </head>
 <body>
 
-  <!-- 區塊 1：ngrok 連結功能 -->
+  <!-- 區塊 1：ngrok 連結 -->
   <div class="container-box">
     <h2>ngrok 連結</h2>
 
@@ -46,32 +48,18 @@
     <div id="resultArea"></div>
   </div>
 
-  <!-- 區塊 2：建立商品明細功能 -->
+  <!-- 區塊 2：建立商品明細 -->
   <div class="container-box mt-4">
     <h2>建立商品明細</h2>
 
-    <!-- step 1：中分類 -->
-    <div class="mb-3" style="max-width:200px;">
-      <label class="form-label">中分類編號 (801~806)</label>
-      <select id="catSelect" class="form-select">
-        <option selected disabled value="">請選擇</option>
-        <option value="801">801</option>
-        <option value="802">802</option>
-        <option value="803">803</option>
-        <option value="804">804</option>
-        <option value="805">805</option>
-        <option value="806">806</option>
-      </select>
-    </div>
-
-    <!-- step 2：關鍵字 -->
+    <!-- step 1：關鍵字 -->
     <div class="mb-3 position-relative">
       <label class="form-label">商品關鍵字</label>
       <input id="prodKeyword" type="text" class="form-control" placeholder="輸入關鍵字">
       <div id="suggestList" class="list-group"></div>
     </div>
 
-    <!-- step 3：重量 -->
+    <!-- step 2：重量 -->
     <div class="mb-3" style="max-width:200px;">
       <label class="form-label">重量 / 斤</label>
       <input id="prodWeight" type="number" min="0" step="0.1" class="form-control">
@@ -99,7 +87,7 @@
 
   <!-- ================== JavaScript ================== -->
   <script>
-  /* -------------------- 區塊 1：ngrok 連結 -------------------- */
+  /* ---------- 區塊 1：ngrok 連結 ---------- */
   const BASE_URL   = 'https://6ca8-218-34-110-52.ngrok-free.app';
   const showBtn    = document.getElementById('showLinksBtn');
   const resultArea = document.getElementById('resultArea');
@@ -111,7 +99,7 @@
       const res = await fetch(`${BASE_URL}/api/inventory/claim-links?ngrok-skip-browser-warning=true`,
                               { headers:{'ngrok-skip-browser-warning':'true'} });
       if(!res.ok) throw new Error('無法取得資料');
-      const data = await res.json();   // [{id,text,link}]
+      const data = await res.json();
 
       // 分組
       const groups = { '真空包':[], '業務包':[], '其他':[] };
@@ -151,7 +139,7 @@
     }
   });
 
-  /* -------------------- 區塊 2：商品明細 -------------------- */
+  /* ---------- 區塊 2：商品明細 ---------- */
   // 解析 CSV
   let products = [];
   Papa.parse('products.csv', {
@@ -164,13 +152,12 @@
 
   // 自動完成
   $('prodKeyword').addEventListener('input', () => {
-    const kw  = $('prodKeyword').value.trim();
-    const cat = $('catSelect').value;
-    const list= $('suggestList');
+    const kw = $('prodKeyword').value.trim();
+    const list = $('suggestList');
     list.innerHTML = '';
-    if(!kw || !cat) return;
+    if(!kw) return;
 
-    products.filter(p => p['中分類']===cat && p['規    格'].includes(kw))
+    products.filter(p => p['規    格'].includes(kw))  // 只用關鍵字過濾
             .slice(0,10).forEach(p=>{
       const a = document.createElement('a');
       a.className='list-group-item list-group-item-action';
@@ -179,7 +166,8 @@
         $('prodKeyword').value = p['規    格'];
         $('prodKeyword').dataset.code  = p['商品編號'];
         $('prodKeyword').dataset.price = p['售價'];
-        $('suggestList').innerHTML='';
+        $('prodKeyword').dataset.cat   = p['中分類'];
+        list.innerHTML='';
       };
       list.appendChild(a);
     });
@@ -187,13 +175,13 @@
 
   // 新增明細
   $('addDetailBtn').onclick = () => {
-    const code = $('prodKeyword').dataset.code;
-    const name = $('prodKeyword').value.trim();
-    const price= parseFloat($('prodKeyword').dataset.price);
-    const cat  = $('catSelect').value;
+    const code   = $('prodKeyword').dataset.code;
+    const name   = $('prodKeyword').value.trim();
+    const price  = parseFloat($('prodKeyword').dataset.price);
+    const cat    = $('prodKeyword').dataset.cat;
     const weight = parseFloat($('prodWeight').value);
 
-    if(!code||!name||!cat||!weight){
+    if(!code||!name||!weight){
       return alert('請完整輸入');
     }
     const subtotal = price * weight;
@@ -204,6 +192,7 @@
     $('prodKeyword').value='';
     $('prodKeyword').dataset.code='';
     $('prodKeyword').dataset.price='';
+    $('prodKeyword').dataset.cat='';
     $('prodWeight').value='';
   };
 
@@ -227,8 +216,8 @@
     if(!details.length) return alert('尚未新增任何商品！');
     const uid = 'NF' + dayjs().format('YYYYMMDDHHmmss') +
                 Math.floor(Math.random()*9000+1000);
-    $('uidBox').textContent = '此明細編號：'+uid;
-    // 如需傳送到後端，可在此 fetch POST
+    $('uidBox').textContent = '此明細編號：' + uid;
+    // 可在此處 fetch POST details 到後端
   };
   </script>
 </body>
