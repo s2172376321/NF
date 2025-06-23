@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ngrok 連結 + 建立 & 查找明細</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>商品明細系統</title>
 
   <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -13,14 +13,13 @@
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
-    body{background:#f4f6fb;font-family:'Segoe UI','Microsoft JhengHei',Arial,sans-serif;margin:0;padding:0;}
-    .container-box{max-width:700px;margin:40px auto;background:#fff;border-radius:18px;
+    body{background:#eef1f7;font-family:'Segoe UI','Microsoft JhengHei',Arial,sans-serif;margin:0;padding:0;}
+    .container-box{max-width:720px;margin:40px auto;background:#fff;border-radius:18px;
                    box-shadow:0 8px 32px rgba(60,72,88,.18);padding:40px 32px;}
     h2{color:#2d3a4b;margin-bottom:24px;font-size:2em;letter-spacing:2px;text-align:center;}
     .big-btn{display:block;width:100%;padding:22px 0;font-size:1.25em;font-weight:600;color:#fff;
              background:linear-gradient(90deg,#3a7bd5 0%,#00d2ff 100%);border:none;border-radius:12px;
-             box-shadow:0 4px 16px rgba(58,123,213,.12);text-decoration:none;transition:.2s;
-             letter-spacing:1px;text-align:center;}
+             box-shadow:0 4px 16px rgba(58,123,213,.12);text-decoration:none;transition:.2s;letter-spacing:1px;text-align:center;}
     .big-btn:hover,.big-btn:focus{background:linear-gradient(90deg,#005c97 0%,#363795 100%);
                                   transform:translateY(-2px) scale(1.03);box-shadow:0 8px 24px rgba(58,123,213,.18);}
     .group-title{margin:24px 0 8px;font-weight:700;color:#fa541c;}
@@ -53,20 +52,18 @@
       <div id="suggestList" class="list-group"></div>
     </div>
 
-    <!-- 動態單位 -->
     <div class="mb-3" style="max-width:200px;">
-      <label class="form-label" id="weightLabel">單位 / －</label>
+      <label class="form-label" id="weightLabel">重量 / －</label>
       <input id="prodWeight" type="number" min="0" step="0.1" class="form-control">
     </div>
     <div id="unitPriceTip" class="text-muted mb-3"></div>
 
     <button id="addDetailBtn" class="big-btn mb-4">新增一件明細</button>
 
-    <!-- 明細預覽：商品名稱 -->
     <div class="table-responsive">
       <table class="table table-bordered align-middle">
         <thead class="table-light">
-          <tr><th>#</th><th>商品名稱</th><th>單價</th><th>單位</th><th>小計</th><th></th></tr>
+          <tr><th>#</th><th>商品名稱</th><th>單價</th><th>重量</th><th>小計</th><th></th></tr>
         </thead>
         <tbody id="detailTableBody"></tbody>
       </table>
@@ -85,12 +82,12 @@
       <label class="form-label">輸入明細編號或商品關鍵字</label>
       <input id="searchInput" class="form-control" placeholder="如：D240601123 或 青江菜">
     </div>
-    <button id="searchBtn"   class="big-btn mb-3">搜尋</button>
-    <button id="todayBtn"    class="big-btn mb-3">顯示今日明細</button>
+    <button id="searchBtn" class="big-btn mb-3">搜尋</button>
+    <button id="todayBtn" class="big-btn mb-3">顯示今日明細</button>
     <div id="searchResult"></div>
   </div>
 
-  <!-- ===== Modal：僅選擇用途 ===== -->
+  <!-- Modal：選擇用途 -->
   <div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog"><div class="modal-content">
       <div class="modal-header"><h5 class="modal-title">選擇用途 / 部門</h5>
@@ -117,14 +114,15 @@
   <!-- ================== JavaScript ================== -->
   <script>
   const $ = id => document.getElementById(id);
+  const API_HOST = 'https://6ca8-218-34-110-52.ngrok-free.app';           // 後端根網址
+  const LOCAL_CSV = 'products.csv';                                      // 商品 CSV
 
-  /* ---------- 區塊 1：ngrok 連結 ---------- */
-  const BASE_URL='https://6ca8-218-34-110-52.ngrok-free.app';
+  /* ---------- ngrok 連結 ---------- */
   $('showLinksBtn').addEventListener('click', async e=>{
     const btn=e.target,area=$('resultArea');
     btn.disabled=true;btn.textContent='載入中…';
     try{
-      const res=await fetch(`${BASE_URL}/api/inventory/claim-links?ngrok-skip-browser-warning=true`,
+      const res=await fetch(`${API_HOST}/api/inventory/claim-links?ngrok-skip-browser-warning=true`,
                             {headers:{'ngrok-skip-browser-warning':'true'}});
       if(!res.ok)throw new Error('無法取得資料');
       const data=await res.json(),groups={'真空包':[],'業務包':[],'其他':[]};
@@ -144,12 +142,11 @@
     finally{btn.disabled=false;btn.textContent='顯示領用連結';}
   });
 
-  /* ---------- 區塊 2：建立商品明細 ---------- */
-  const LOCAL_KEY='NF_DETAILS'; let products=[];
-  Papa.parse('products.csv',{header:true,download:true,skipEmptyLines:true,complete:r=>products=r.data});
+  /* ---------- 建立商品明細 ---------- */
+  let products=[];
+  Papa.parse(LOCAL_CSV,{header:true,download:true,skipEmptyLines:true,complete:r=>products=r.data});
   const details=[];
 
-  // 自動完成
   $('prodKeyword').addEventListener('input',()=>{
     const kw=$('prodKeyword').value.trim(),list=$('suggestList');list.innerHTML='';
     if(!kw)return;
@@ -164,8 +161,7 @@
         kwInput.dataset.cat   = p['中分類'];
         kwInput.dataset.unit  = p['單位'];
 
-        // 動態顯示單位與單價
-        $('weightLabel').textContent = '單位 / ' + p['單位'];
+        $('weightLabel').textContent = '重量 / ' + p['單位'];
         $('unitPriceTip').textContent = `單價：${p['售價']} 元／${p['單位']}`;
 
         list.innerHTML='';
@@ -174,7 +170,6 @@
     });
   });
 
-  // 新增明細
   $('addDetailBtn').onclick=()=>{
     const kw=$('prodKeyword'),code=kw.dataset.code,name=kw.value.trim(),
           price=parseFloat(kw.dataset.price),cat=kw.dataset.cat,unit=kw.dataset.unit,
@@ -184,29 +179,24 @@
     details.push({id:tmpId,code,name,cat,unit,price,weight,subtotal});
     renderTable();
 
-    // reset
     kw.value='';kw.dataset.code='';kw.dataset.price='';kw.dataset.cat='';kw.dataset.unit='';
     $('prodWeight').value='';
-    $('weightLabel').textContent='單位 / －';
+    $('weightLabel').textContent='重量 / －';
     $('unitPriceTip').textContent='';
   };
 
-  function renderTable(){
-    $('detailTableBody').innerHTML=details.map((d,i)=>`
-      <tr><td>${i+1}</td><td>${d.name}</td><td>${d.price}</td>
-          <td>${d.weight}</td><td>${d.subtotal}</td>
-          <td><button class="btn btn-sm btn-danger" onclick="removeItem(${i})">刪除</button></td></tr>`).join('');
-    $('totalSum').textContent='總計：'+details.reduce((s,d)=>s+d.subtotal,0)+' 元';
-  }
-  window.removeItem=i=>{details.splice(i,1);renderTable();};
+  const renderTable=()=>$('detailTableBody').innerHTML=details.map((d,i)=>`
+    <tr><td>${i+1}</td><td>${d.name}</td><td>${d.price}</td>
+        <td>${d.weight}</td><td>${d.subtotal}</td>
+        <td><button class="btn btn-sm btn-danger" onclick="removeItem(${i})">刪除</button></td></tr>`).join('');
+  window.removeItem=i=>{details.splice(i,1);renderTable();$('totalSum').textContent='總計：'+details.reduce((s,d)=>s+d.subtotal,0)+' 元';};
 
-  const modal=new bootstrap.Modal($('uploadModal'));
+  const modal=new bootstrap.Modal($('#uploadModal'));
 
   $('finishBtn').onclick=()=>{
     if(!details.length)return alert('尚未新增任何商品！');
     const uid='D'+dayjs().format('YYMMDD')+Math.floor(Math.random()*900+100);
     details.forEach((d,idx)=>d.id=uid+'-'+(idx+1));
-    window.__CURRENT_UID__=uid;window.__CURRENT_DETS__=structuredClone(details);
 
     const uidEl=$('uidBox');
     uidEl.textContent='此明細編號：'+uid;
@@ -217,80 +207,81 @@
       });
     };
 
+    // 存在全域以便 Modal 使用
+    window.__CURRENT_UID__ = uid;
+    window.__CURRENT_DETS__= structuredClone(details);
+
+    // 清空畫面
     details.length=0;renderTable();$('totalSum').textContent='';
-    $('purposeSelect').value='';modal.show();
+    $('purposeSelect').value='';
+    modal.show();
   };
 
-  $('modalSaveBtn').onclick=()=>{
+  $('modalSaveBtn').onclick=async()=>{
     const purpose=$('purposeSelect').value;if(!purpose)return alert('請選擇用途/部門！');
-    const store=JSON.parse(localStorage.getItem(LOCAL_KEY)||'{}'),
-          uid=window.__CURRENT_UID__,arr=window.__CURRENT_DETS__;
-    arr.forEach(o=>o.purpose=purpose); store[uid]=arr;
-    localStorage.setItem(LOCAL_KEY,JSON.stringify(store));
-    modal.hide(); alert('已儲存，可於「查找明細」搜尋。');
+    const uid=window.__CURRENT_UID__, arr=window.__CURRENT_DETS__;
+    arr.forEach(o=>o.purpose=purpose);
+
+    try{
+      const res=await fetch(`${API_HOST}/api/save-detail`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({uid,details:arr})
+      });
+      const js=await res.json();
+      if(!js.success)throw new Error(js.message||'寫入失敗');
+      modal.hide(); alert('已儲存至資料庫，可於「查找明細」搜尋。');
+    }catch(e){alert('儲存失敗：'+e.message);}
   };
 
-  /* ---------- 區塊 3：查找 / 今日明細 ---------- */
-  $('searchBtn').onclick=()=>runSearch($('searchInput').value.trim());
-  $('todayBtn').onclick = ()=>{
-    const todayStr = dayjs().format('YYMMDD');
-    runSearch('@@TODAY'+todayStr);        // 特殊旗標
-  };
+  /* ---------- 查找 / 今日明細 ---------- */
+  $('searchBtn').onclick=()=>runSearch($('#searchInput').value.trim());
+  $('todayBtn').onclick = ()=> runSearch('@@TODAY');
 
-  function runSearch(keyword){
+  async function runSearch(keyword){
     const div=$('searchResult'); div.innerHTML='';
     if(!keyword){alert('請輸入關鍵字');return;}
-    const store=JSON.parse(localStorage.getItem(LOCAL_KEY)||'{}');
+    let url=`${API_HOST}/api/get-sales-details`;
+    if(keyword==='@@TODAY'){url+='?today=1';}
+    else if(keyword.startsWith('D')){url+=`?uid=${keyword}`;}
+    else{url+=`?q=${encodeURIComponent(keyword)}`;}
 
-    // 今日
-    if(keyword.startsWith('@@TODAY')){
-      const today=keyword.slice(7);
-      const ids=Object.keys(store).filter(id=>id.slice(1,7)===today);
-      if(!ids.length){div.textContent='今天尚無明細';return;}
-      buildAccordion(ids,store,div);
-      return;
-    }
-
-    // 直接 UID
-    if(store[keyword]){buildAccordion([keyword],store,div,true);return;}
-
-    // 關鍵字
-    let found=[];Object.entries(store).forEach(([id,arr])=>{
-      arr.forEach(it=>{if(it.name.includes(keyword)||it.code.includes(keyword))found.push({...it,mainId:id});});
-    });
-    if(!found.length){div.textContent='查無資料';return;}
-    const grp={};found.forEach(i=>(grp[i.mainId]=grp[i.mainId]||[]).push(i));
-    buildAccordion(Object.keys(grp),grp,div);
+    try{
+      const res=await fetch(url);
+      const js=await res.json();
+      if(!js.success){div.textContent=js.message||'查無資料';return;}
+      const data=js.data,ids=Object.keys(data);
+      if(!ids.length){div.textContent='查無資料';return;}
+      buildAccordion(ids,data,div);
+    }catch(e){div.textContent='查詢失敗：'+e;}
   }
 
-  // 手風琴
-  function buildAccordion(ids,data,container,exact=false){
-    let html=`<div class="accordion" id="acc">`;
+  /* ---------- 共用渲染 ---------- */
+  function buildAccordion(ids,data,container){
+    let html='<div class="accordion" id="acc">';
     ids.forEach((id,idx)=>{
-      const arr = exact ? data[id] : data[id] || [];
       html+=`
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="h${idx}">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-              data-bs-target="#c${idx}">${id}</button>
-          </h2>
-          <div id="c${idx}" class="accordion-collapse collapse" data-bs-parent="#acc">
-            <div class="accordion-body p-0">
-              ${buildTable(arr)}
-            </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="h${idx}">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c${idx}">${id}</button>
+        </h2>
+        <div id="c${idx}" class="accordion-collapse collapse" data-bs-parent="#acc">
+          <div class="accordion-body p-0">
+            ${buildTable(data[id])}
           </div>
-        </div>`;
+        </div>
+      </div>`;
     });
     html+='</div>';
     container.innerHTML=html;
   }
   function buildTable(arr){
     return `<table class="table table-sm table-bordered mb-0">
-      <thead class="table-light"><tr><th>#</th><th>商品編號</th><th>品名</th><th>中分類</th>
-        <th>用途</th><th>單位</th><th>單價</th><th>單位</th><th>小計</th></tr></thead>
+      <thead class="table-light"><tr>
+        <th>#</th><th>商品編號</th><th>品名</th><th>中分類</th><th>用途</th>
+        <th>單位</th><th>單價</th><th>重量</th><th>小計</th></tr></thead>
       <tbody>${arr.map((d,i)=>`<tr><td>${i+1}</td><td>${d.code}</td><td>${d.name}</td>
-        <td>${d.cat}</td><td>${d.purpose||'-'}</td><td>${d.unit||'-'}</td><td>${d.price}</td>
-        <td>${d.weight}</td><td>${d.subtotal}</td></tr>`).join('')}</tbody></table>`;
+        <td>${d.cat||'-'}</td><td>${d.purpose||'-'}</td><td>${d.unit||'-'}</td>
+        <td>${d.price}</td><td>${d.weight}</td><td>${d.subtotal}</td></tr>`).join('')}</tbody></table>`;
   }
   </script>
 </body>
