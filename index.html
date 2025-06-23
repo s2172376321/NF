@@ -12,10 +12,11 @@
     .btn-list li{margin-bottom:24px;}
     .ngrok-btn{display:block;width:100%;padding:22px 0;font-size:1.3em;font-weight:600;color:#fff;background:linear-gradient(90deg,#3a7bd5 0%,#00d2ff 100%);border:none;border-radius:12px;box-shadow:0 4px 16px rgba(58,123,213,.12);text-decoration:none;transition:background .2s,transform .2s,box-shadow .2s;letter-spacing:1px;}
     .ngrok-btn:hover,.ngrok-btn:focus{background:linear-gradient(90deg,#005c97 0%,#363795 100%);transform:translateY(-2px) scale(1.03);box-shadow:0 8px 24px rgba(58,123,213,.18);outline:none;}
-    #claimLinks{margin-top:24px;text-align:left;padding-left:0;}
-    #claimLinks li{margin-bottom:12px;list-style:disc inside;color:#2d3a4b;font-size:1em;}
-    #claimLinks a{color:#005c97;text-decoration:none;font-weight:600;}
-    #claimLinks a:hover{text-decoration:underline;}
+    .group-title{margin:24px 0 8px;text-align:left;font-weight:700;color:#fa541c;}
+    ul.links{list-style:none;padding-left:0;margin:0 0 8px 0;text-align:left;}
+    ul.links li{margin-bottom:8px;}
+    ul.links a{color:#005c97;text-decoration:none;font-weight:600;}
+    ul.links a:hover{text-decoration:underline;}
   </style>
 </head>
 <body>
@@ -28,48 +29,65 @@
       <li><a class="ngrok-btn" href="https://2966-218-34-110-52.ngrok-free.app" target="_blank">採收資料 &amp; 資材使用</a></li>
     </ul>
 
-    <!-- 顯示領用連結按鈕 -->
-    <button id="showLinksBtn" class="ngrok-btn" style="margin-top:12px;padding:18px 0;">
-      顯示領用連結
-    </button>
+    <button id="showLinksBtn" class="ngrok-btn" style="margin-top:12px;padding:18px 0;">顯示領用連結</button>
 
-    <!-- 領用連結清單 -->
-    <ul id="claimLinks"></ul>
+    <div id="resultArea" style="margin-top:16px;"></div>
   </div>
 
-<script>
-  const BASE_URL = 'https://6ca8-218-34-110-52.ngrok-free.app';
+  <script>
+    const BASE_URL = 'https://6ca8-218-34-110-52.ngrok-free.app';
+    const btn     = document.getElementById('showLinksBtn');
+    const area    = document.getElementById('resultArea');
 
-  const btn  = document.getElementById('showLinksBtn');
-  const list = document.getElementById('claimLinks');
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      btn.textContent = '載入中…';
+      try {
+        const res = await fetch(
+          `${BASE_URL}/api/inventory/claim-links?ngrok-skip-browser-warning=true`,
+          { headers:{ 'ngrok-skip-browser-warning':'true' } }
+        );
+        if (!res.ok) throw new Error('無法取得資料');
+        const data = await res.json();   // [{id,text,link}]
 
-  btn.addEventListener('click', async () => {
-    btn.disabled = true;
-    btn.textContent = '載入中…';
-    try {
-      const res = await fetch(
-        `${BASE_URL}/api/inventory/claim-links?ngrok-skip-browser-warning=true`,
-        { headers: { 'ngrok-skip-browser-warning': 'true' } }   // ← 關鍵
-      );
-      if (!res.ok) throw new Error('無法取得資料');
-      const data = await res.json();
-
-      list.innerHTML = '';
-      if (!data.length) {
-        list.innerHTML = '<li>目前沒有庫存資料</li>';
-      } else {
-        data.forEach(i => {
-          const li = document.createElement('li');
-          li.innerHTML = `<a href="${i.link}" target="_blank">${i.text}</a>`;
-          list.appendChild(li);
+        // 分組
+        const groups = { '真空包':[], '業務包':[], '其他':[] };
+        data.forEach(item=>{
+          if(item.text.includes('真空包'))      groups['真空包'].push(item);
+          else if(item.text.includes('業務包')) groups['業務包'].push(item);
+          else                                   groups['其他'].push(item);
         });
+
+        // 產生 HTML
+        area.innerHTML = '';
+        Object.keys(groups).forEach(key=>{
+          if(!groups[key].length) return;
+          const h = document.createElement('div');
+          h.className = 'group-title';
+          h.textContent = key;
+          area.appendChild(h);
+
+          const ul = document.createElement('ul');
+          ul.className = 'links';
+          groups[key].forEach(item=>{
+            const li = document.createElement('li');
+            const a  = document.createElement('a');
+            // 把 + 換成兩個空白
+            a.textContent = item.text.replace(/\+/g,'  ');
+            a.href  = item.link;
+            a.target= '_blank';
+            li.appendChild(a);
+            ul.appendChild(li);
+          });
+          area.appendChild(ul);
+        });
+
+      } catch(err){ alert('載入失敗：'+err.message); }
+      finally{
+        btn.disabled = false;
+        btn.textContent = '顯示領用連結';
       }
-    } catch (err) {
-      alert('載入失敗：' + err.message);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '顯示領用連結';
-    }
-  });
-</script></body>
+    });
+  </script>
+</body>
 </html>
