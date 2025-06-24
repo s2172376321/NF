@@ -117,6 +117,13 @@
   // 後端根網址（不加尾斜線，避免組字串時變成 //）
   const API_HOST = 'https://6ca8-218-34-110-52.ngrok-free.app';
 
+  /* === 統一 API 路徑 === */
+  const API = {
+    claimLinks  : '/api/inventory/claim-links',   // 取得領用連結
+    saveDetail  : '/api/save-detail',             // 儲存明細
+    getSales    : '/api/get-sales-details'        // 查詢明細
+  };
+
   // ngrok 需要的 header，避免瀏覽器安全警告頁面（HTML）導致 JSON 解析失敗
   const NG_HEADERS = {'ngrok-skip-browser-warning':'true'};
 
@@ -127,7 +134,7 @@
     const btn=e.target,area=$('resultArea');
     btn.disabled=true;btn.textContent='載入中…';
     try{
-      const res=await fetch(`${API_HOST}/api/inventory/claim-links?ngrok-skip-browser-warning=true`,
+      const res=await fetch(`${API_HOST}${API.claimLinks}?ngrok-skip-browser-warning=true`,
                             {headers:NG_HEADERS});
       if(!res.ok)throw new Error('無法取得資料');
       const data=await res.json(),groups={'真空包':[],'業務包':[],'其他':[]};
@@ -228,13 +235,16 @@
     arr.forEach(o=>o.purpose=purpose);
 
     try{
-      const res=await fetch(`${API_HOST}/api/inventory/save-detail`,{
+      const res=await fetch(`${API_HOST}${API.saveDetail}`,{
         method:'POST',
         headers:{'Content-Type':'application/json',...NG_HEADERS},
         body:JSON.stringify({uid,details:arr})
       });
       const js=await res.json();
-      if(!js.success)throw new Error(js.message||'寫入失敗');
+      if(!js.success){
+        const msg = js.message || js.error || js.msg || res.statusText || '寫入失敗';
+        throw new Error(msg);
+      }
       modal.hide(); alert('已儲存至資料庫，可於「查找明細」搜尋。');
     }catch(e){alert('儲存失敗：'+e.message);}
   };
@@ -246,7 +256,7 @@
   async function runSearch(keyword){
     const div=$('searchResult'); div.innerHTML='';
     if(!keyword){alert('請輸入關鍵字');return;}
-    let url=`${API_HOST}/api/inventory/get-sales-details`;
+    let url=`${API_HOST}${API.getSales}`;
     if(keyword==='@@TODAY'){url+='?today=1';}
     else if(keyword.startsWith('D')){url+=`?uid=${keyword}`;}
     else{url+=`?q=${encodeURIComponent(keyword)}`;}
@@ -254,7 +264,7 @@
     try{
       const res=await fetch(url,{headers:NG_HEADERS});
       const js=await res.json();
-      if(!js.success){div.textContent=js.message||'查無資料';return;}
+      if(!js.success){div.textContent=js.message||js.error||js.msg||'查無資料';return;}
       const data=js.data,ids=Object.keys(data);
       if(!ids.length){div.textContent='查無資料';return;}
       buildAccordion(ids,data,div);
@@ -292,4 +302,3 @@
   </script>
 </body>
 </html>
-
