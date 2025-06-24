@@ -114,8 +114,13 @@
   <!-- ================== JavaScript ================== -->
   <script>
   const $ = id => document.getElementById(id);
-  const API_HOST  = 'https://6ca8-218-34-110-52.ngrok-free.app';   // 後端根網址
-  const LOCAL_CSV = 'products.csv';                                // 商品 CSV 路徑
+  // 後端根網址（不加尾斜線，避免組字串時變成 //）
+  const API_HOST = 'https://6ca8-218-34-110-52.ngrok-free.app';
+
+  // ngrok 需要的 header，避免瀏覽器安全警告頁面（HTML）導致 JSON 解析失敗
+  const NG_HEADERS = {'ngrok-skip-browser-warning':'true'};
+
+  const LOCAL_CSV = 'products.csv';                                      // 商品 CSV
 
   /* ---------- ngrok 連結 ---------- */
   $('showLinksBtn').addEventListener('click', async e=>{
@@ -123,7 +128,7 @@
     btn.disabled=true;btn.textContent='載入中…';
     try{
       const res=await fetch(`${API_HOST}/api/inventory/claim-links?ngrok-skip-browser-warning=true`,
-                            {headers:{'ngrok-skip-browser-warning':'true'}});
+                            {headers:NG_HEADERS});
       if(!res.ok)throw new Error('無法取得資料');
       const data=await res.json(),groups={'真空包':[],'業務包':[],'其他':[]};
       data.forEach(i=>{
@@ -178,8 +183,11 @@
     const tmpId=crypto.randomUUID().slice(0,8),subtotal=price*weight;
     details.push({id:tmpId,code,name,cat,unit,price,weight,subtotal});
     renderTable();
+
     kw.value='';kw.dataset.code='';kw.dataset.price='';kw.dataset.cat='';kw.dataset.unit='';
-    $('prodWeight').value='';$('weightLabel').textContent='重量 / －';$('unitPriceTip').textContent='';
+    $('prodWeight').value='';
+    $('weightLabel').textContent='重量 / －';
+    $('unitPriceTip').textContent='';
   };
 
   const renderTable=()=>$('detailTableBody').innerHTML=details.map((d,i)=>`
@@ -188,7 +196,7 @@
         <td><button class="btn btn-sm btn-danger" onclick="removeItem(${i})">刪除</button></td></tr>`).join('');
   window.removeItem=i=>{details.splice(i,1);renderTable();$('totalSum').textContent='總計：'+details.reduce((s,d)=>s+d.subtotal,0)+' 元';};
 
-  const modal=new bootstrap.Modal(document.getElementById('uploadModal'));
+  const modal=new bootstrap.Modal($('uploadModal'));
 
   $('finishBtn').onclick=()=>{
     if(!details.length)return alert('尚未新增任何商品！');
@@ -203,17 +211,28 @@
         setTimeout(()=>uidEl.textContent=old,1500);
       });
     };
-    window.__CURRENT_UID__=uid; window.__CURRENT_DETS__=structuredClone(details);
-    details.length=0;renderTable();$('totalSum').textContent=''; $('purposeSelect').value=''; modal.show();
+
+    // 存在全域以便 Modal 使用
+    window.__CURRENT_UID__ = uid;
+    window.__CURRENT_DETS__= structuredClone(details);
+
+    // 清空畫面
+    details.length=0;renderTable();$('totalSum').textContent='';
+    $('purposeSelect').value='';
+    modal.show();
   };
 
   $('modalSaveBtn').onclick=async()=>{
     const purpose=$('purposeSelect').value;if(!purpose)return alert('請選擇用途/部門！');
-    const uid=window.__CURRENT_UID__,arr=window.__CURRENT_DETS__; arr.forEach(o=>o.purpose=purpose);
+    const uid=window.__CURRENT_UID__, arr=window.__CURRENT_DETS__;
+    arr.forEach(o=>o.purpose=purpose);
+
     try{
       const res=await fetch(`${API_HOST}/api/save-detail`,{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({uid,details:arr})});
+        method:'POST',
+        headers:{'Content-Type':'application/json',...NG_HEADERS},
+        body:JSON.stringify({uid,details:arr})
+      });
       const js=await res.json();
       if(!js.success)throw new Error(js.message||'寫入失敗');
       modal.hide(); alert('已儲存至資料庫，可於「查找明細」搜尋。');
@@ -221,41 +240,50 @@
   };
 
   /* ---------- 查找 / 今日明細 ---------- */
-  $('searchBtn').onclick=()=>runSearch($('searchInput').value.trim());
-  $('todayBtn').onclick=()=>runSearch('@@TODAY');
+  $('searchBtn').onclick=()=>runSearch($('#searchInput').value.trim());
+  $('todayBtn').onclick = ()=> runSearch('@@TODAY');
 
   async function runSearch(keyword){
     const div=$('searchResult'); div.innerHTML='';
     if(!keyword){alert('請輸入關鍵字');return;}
     let url=`${API_HOST}/api/get-sales-details`;
-    if(keyword==='@@TODAY')url+='?today=1';
-    else if(keyword.startsWith('D'))url+=`?uid=${keyword}`;
-    else url+=`?q=${encodeURIComponent(keyword)}`;
+    if(keyword==='@@TODAY'){url+='?today=1';}
+    else if(keyword.startsWith('D')){url+=`?uid=${keyword}`;}
+    else{url+=`?q=${encodeURIComponent(keyword)}`;}
+
     try{
-      const js=await fetch(url).then(r=>r.json());
+      const res=await fetch(url,{headers:NG_HEADERS});
+      const js=await res.json();
       if(!js.success){div.textContent=js.message||'查無資料';return;}
-      const ids=Object.keys(js.data); if(!ids.length){div.textContent='查無資料';return;}
-      buildAccordion(ids,js.data,div);
+      const data=js.data,ids=Object.keys(data);
+      if(!ids.length){div.textContent='查無資料';return;}
+      buildAccordion(ids,data,div);
     }catch(e){div.textContent='查詢失敗：'+e;}
   }
 
   /* ---------- 共用渲染 ---------- */
   function buildAccordion(ids,data,container){
-    container.innerHTML = `<div class="accordion" id="acc">
-      ${ids.map((id,i)=>`
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="h${i}">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c${i}">${id}</button>
-          </h2>
-          <div id="c${i}" class="accordion-collapse collapse" data-bs-parent="#acc">
-            <div class="accordion-body p-0">${buildTable(data[id])}</div>
+    let html='<div class="accordion" id="acc">';
+    ids.forEach((id,idx)=>{
+      html+=`
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="h${idx}">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c${idx}">${id}</button>
+        </h2>
+        <div id="c${idx}" class="accordion-collapse collapse" data-bs-parent="#acc">
+          <div class="accordion-body p-0">
+            ${buildTable(data[id])}
           </div>
-        </div>`).join('')}
-    </div>`;
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+    container.innerHTML=html;
   }
   function buildTable(arr){
     return `<table class="table table-sm table-bordered mb-0">
-      <thead class="table-light"><tr><th>#</th><th>商品編號</th><th>品名</th><th>中分類</th><th>用途</th>
+      <thead class="table-light"><tr>
+        <th>#</th><th>商品編號</th><th>品名</th><th>中分類</th><th>用途</th>
         <th>單位</th><th>單價</th><th>重量</th><th>小計</th></tr></thead>
       <tbody>${arr.map((d,i)=>`<tr><td>${i+1}</td><td>${d.code}</td><td>${d.name}</td>
         <td>${d.cat||'-'}</td><td>${d.purpose||'-'}</td><td>${d.unit||'-'}</td>
