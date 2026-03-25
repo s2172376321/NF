@@ -38,11 +38,11 @@
     <h2>ngrok 連結</h2>
     <ul class="list-unstyled">
       <li class="mb-3"><a class="big-btn" href="http://ec2-3-27-59-9.ap-southeast-2.compute.amazonaws.com" target="_blank">農場小工具</a></li>
-      <li class="mb-3"><a class="big-btn" href="http://ec2-3-27-59-9.ap-southeast-2.compute.amazonaws.com/svc2" target="_blank">埔農出勤</a></li>
+      <li class="mb-3 d-none" aria-hidden="true"><a class="big-btn" href="http://ec2-3-27-59-9.ap-southeast-2.compute.amazonaws.com/svc2" target="_blank" tabindex="-1">埔農出勤</a></li>
       <!-- 網路菜車專案 D:\網路菜車 → 本機 http://localhost:3000；免費隧道公網網址請與 API_HOST 一併替換 -->
       <li class="mb-3"><a class="big-btn big-btn-port3000" id="linkPort3000" href="#" target="_blank" rel="noopener" title="本機專案：D:\網路菜車">網路菜車</a></li>
     </ul>
-    <button id="showLinksBtn" class="big-btn mb-3">顯示領用連結</button>
+    <button id="showLinksBtn" type="button" class="big-btn mb-3 d-none" aria-hidden="true">顯示領用連結</button>
     <div id="resultArea"></div>
   </div>
 
@@ -153,8 +153,9 @@
     }
   })();
 
-  /* ---------- ngrok 連結 ---------- */
-  $('showLinksBtn').addEventListener('click', async e=>{
+  /* ---------- ngrok 連結（按鈕可隱藏，仍保留 id 供需要時啟用） ---------- */
+  const showLinksBtn = $('showLinksBtn');
+  if (showLinksBtn) showLinksBtn.addEventListener('click', async e=>{
     const btn=e.target,area=$('resultArea');
     btn.disabled=true;btn.textContent='載入中…';
     try{
