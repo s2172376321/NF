@@ -22,6 +22,8 @@
              box-shadow:0 4px 16px rgba(58,123,213,.12);text-decoration:none;transition:.2s;letter-spacing:1px;text-align:center;}
     .big-btn:hover,.big-btn:focus{background:linear-gradient(90deg,#005c97 0%,#363795 100%);
                                   transform:translateY(-2px) scale(1.03);box-shadow:0 8px 24px rgba(58,123,213,.18);}
+    .big-btn-port3000{background:linear-gradient(90deg,#531dab 0%,#c41d7f 100%);}
+    .big-btn-port3000:hover,.big-btn-port3000:focus{background:linear-gradient(90deg,#391085 0%,#9e1068 100%);}
     .group-title{margin:24px 0 8px;font-weight:700;color:#fa541c;}
     ul.links{list-style:none;padding-left:0;margin:0 0 8px 0;} ul.links li{margin-bottom:8px;}
     ul.links a{color:#005c97;text-decoration:none;font-weight:600;} ul.links a:hover{text-decoration:underline;}
@@ -37,6 +39,8 @@
     <ul class="list-unstyled">
       <li class="mb-3"><a class="big-btn" href="http://ec2-3-27-59-9.ap-southeast-2.compute.amazonaws.com" target="_blank">農場小工具</a></li>
       <li class="mb-3"><a class="big-btn" href="http://ec2-3-27-59-9.ap-southeast-2.compute.amazonaws.com/svc2" target="_blank">埔農出勤</a></li>
+      <!-- 網路菜車專案 D:\網路菜車 → 本機 http://localhost:3000；免費隧道公網網址請與 API_HOST 一併替換 -->
+      <li class="mb-3"><a class="big-btn big-btn-port3000" id="linkPort3000" href="#" target="_blank" rel="noopener" title="本機專案：D:\網路菜車">網路菜車（Port 3000 隧道）</a></li>
     </ul>
     <button id="showLinksBtn" class="big-btn mb-3">顯示領用連結</button>
     <div id="resultArea"></div>
@@ -116,6 +120,12 @@
   const $ = id => document.getElementById(id);
   // 後端根網址（不加尾斜線，避免組字串時變成 //）
   const API_HOST = 'https://6ca8-218-34-110-52.ngrok-free.app';
+  /**
+   * 本機 http://localhost:3000 ＝ 專案「網路菜車」路徑 D:\網路菜車（請先於該目錄啟動 dev server）。
+   * 免費隧道公網網址與 API_HOST 通常不同；若使用 app.py 並設定 TUNNEL_EXTRA_LOCAL_PORT=3000，
+   * 可從 test-master 專案根目錄 current-tunnel-3000.url 複製貼上。
+   */
+  const API_HOST_PORT3000 = 'https://請貼上-port3000-隧道網址.trycloudflare.com';
 
   /* === 統一 API 路徑 === */
   const API = {
@@ -128,6 +138,20 @@
   const NG_HEADERS = {'ngrok-skip-browser-warning':'true'};
 
   const LOCAL_CSV = 'products.csv';                                      // 商品 CSV
+
+  (function initPort3000Link(){
+    const el = document.getElementById('linkPort3000');
+    if (!el) return;
+    const u = (typeof API_HOST_PORT3000 === 'string' ? API_HOST_PORT3000.trim() : '');
+    if (u && /^https?:\/\//i.test(u) && !u.includes('請貼上')) {
+      el.href = u.replace(/\/+$/, '');
+    } else {
+      el.addEventListener('click', function(e){
+        e.preventDefault();
+        alert('請在原始碼中設定 API_HOST_PORT3000 為 localhost:3000（網路菜車 D:\\網路菜車）對應的隧道網址，或從 current-tunnel-3000.url 複製。');
+      });
+    }
+  })();
 
   /* ---------- ngrok 連結 ---------- */
   $('showLinksBtn').addEventListener('click', async e=>{
@@ -250,7 +274,7 @@
   };
 
   /* ---------- 查找 / 今日明細 ---------- */
-  $('searchBtn').onclick=()=>runSearch($('#searchInput').value.trim());
+  $('searchBtn').onclick=()=>runSearch($('searchInput').value.trim());
   $('todayBtn').onclick = ()=> runSearch('@@TODAY');
 
   async function runSearch(keyword){
@@ -302,5 +326,3 @@
   </script>
 </body>
 </html>
-
-
