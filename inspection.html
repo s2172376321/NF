@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蛋雞巡檢表</title>
+    <!--
+      【給 GitHub 倉庫 s2172376321/NF 使用】
+      將本檔複製到 NF 倉庫根目錄，檔名維持 inspection.html，commit 後啟用 GitHub Pages（main / root）。
+      QR 固定印：https://s2172376321.github.io/NF/inspection.html
+      隧道換網址時：只改下面 API_HOST（與 staff.html 同一台採收主機時請保持一致）。
+    -->
+    <style>
+        body{background:#eef1f7;font-family:'Segoe UI','Microsoft JhengHei',Arial,sans-serif;margin:0;padding:0;}
+        .container-box{max-width:720px;margin:40px auto;background:#fff;border-radius:18px;
+            box-shadow:0 8px 32px rgba(60,72,88,.18);padding:40px 32px;text-align:center;}
+        h2{color:#2d3a4b;margin:0 0 16px;font-size:1.5em;letter-spacing:2px;}
+        p{color:#64748b;font-size:.95rem;line-height:1.6;margin:12px 0;}
+        .big-btn{display:inline-block;margin-top:20px;padding:16px 32px;font-size:1.1em;font-weight:600;color:#fff;
+            background:linear-gradient(90deg,#3a7bd5 0%,#00d2ff 100%);border:none;border-radius:12px;
+            box-shadow:0 4px 16px rgba(58,123,213,.12);text-decoration:none;transition:.2s;}
+        .big-btn:hover,.big-btn:focus{background:linear-gradient(90deg,#005c97 0%,#363795 100%);
+            transform:translateY(-2px);box-shadow:0 8px 24px rgba(58,123,213,.18);}
+    </style>
+    <script>
+        // 與 NF/staff.html 的 API_HOST 相同邏輯：採收 Flask 隧道根網址（不加尾斜線）
+        var API_HOST = 'https://snapshot-categories-locale-trucks.trycloudflare.com';
+        var INSPECTION_URL = API_HOST.replace(/\/+$/, '') + '/inspection';
+        (function () {
+            var m = document.createElement('meta');
+            m.setAttribute('http-equiv', 'refresh');
+            m.setAttribute('content', '0;url=' + INSPECTION_URL);
+            document.head.appendChild(m);
+            window.location.replace(INSPECTION_URL);
+        })();
+    </script>
+</head>
+<body>
+    <div class="container-box">
+        <h2>前往蛋雞巡檢表</h2>
+        <p>正在自動開啟…</p>
+        <p>若未跳轉，請點下方按鈕。</p>
+        <a id="manual" class="big-btn" href="#">開啟蛋雞巡檢表</a>
+    </div>
+    <script>
+        document.getElementById('manual').href = INSPECTION_URL;
+    </script>
+</body>
+</html>
