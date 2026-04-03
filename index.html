@@ -29,16 +29,45 @@
   </div>
   <script>
   /**
-   * 與採收專案自動推送一致
-   * 本機專案：D:\網路菜車（npm run dev）；隧道見 current-tunnel-3000.url
+   * 與採收專案自動推送一致（github_tunnel_push.py / GITHUB_TUNNEL_AUTO_PUSH）
+   * 本機：D:\網路菜車（npm run dev）；隧道：current-tunnel-3000.url
+   *
+   * 緊急覆寫（免重新部署）：在網址後加查詢參數，優先於下方常數
+   *   ?p3000=https://xxxx.trycloudflare.com
+   *   或 ?tunnel= 同上（僅允許 HTTPS 且為 trycloudflare / 常見 ngrok 網域）
    */
   const API_HOST_PORT3000 = 'https://passive-temperature-vegas-clicking.trycloudflare.com';
+
+  function _allowedTunnelUrl(s) {
+    if (!s || typeof s !== 'string') return false;
+    try {
+      var u = new URL(s.trim());
+      if (u.protocol !== 'https:') return false;
+      var h = (u.hostname || '').toLowerCase();
+      if (h.endsWith('.trycloudflare.com')) return true;
+      if (h.indexOf('ngrok') !== -1 && (
+            h.endsWith('.ngrok-free.app') || h.endsWith('.ngrok.io') || h.endsWith('.ngrok.app')))
+        return true;
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
   (function(){
     var el = document.getElementById('linkPort3000');
     if (!el) return;
-    var u = (typeof API_HOST_PORT3000 === 'string' ? API_HOST_PORT3000.trim() : '');
-    if (u && /^https?:\/\//i.test(u) && u.indexOf('請貼上') === -1) {
-      el.href = u.replace(/\/+$/, '');
+    var qs = new URLSearchParams(window.location.search || '');
+    var fromQuery = (qs.get('p3000') || qs.get('tunnel') || '').trim();
+    var fromConst = (typeof API_HOST_PORT3000 === 'string' ? API_HOST_PORT3000.trim() : '');
+    var u = '';
+    if (_allowedTunnelUrl(fromQuery)) {
+      u = fromQuery.replace(/\/+$/, '');
+    } else if (fromConst && /^https?:\/\//i.test(fromConst) && fromConst.indexOf('請貼上') === -1) {
+      u = fromConst.replace(/\/+$/, '');
+    }
+    if (u) {
+      el.href = u;
     } else {
       el.addEventListener('click', function(e){
         e.preventDefault();
