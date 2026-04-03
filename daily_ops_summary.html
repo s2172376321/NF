@@ -1,372 +1,95 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>今日營運總表｜蛋雞舍</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Noto+Sans+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #f7f5f0;
-            --surface: #fffcf7;
-            --ink: #1c1917;
-            --muted: #78716c;
-            --line: #e7e2d9;
-            --accent: #7c6a58;
-            --accent-soft: rgba(124, 106, 88, 0.12);
-            --ok: #3f6212;
-            --warn: #a16207;
-        }
-        body {
-            font-family: 'Noto Sans TC', sans-serif;
-            font-weight: 400;
-            background: var(--bg);
-            color: var(--ink);
-            min-height: 100vh;
-        }
-        .dos-wrap {
-            max-width: 1180px;
-            margin: 0 auto;
-            padding: 2rem 1.25rem 4rem;
-        }
-        .dos-hero {
-            text-align: center;
-            margin-bottom: 2.5rem;
-            padding-bottom: 1.75rem;
-            border-bottom: 1px solid var(--line);
-        }
-        .dos-hero h1 {
-            font-family: 'Cormorant Garamond', Georgia, serif;
-            font-weight: 600;
-            font-size: clamp(1.75rem, 4vw, 2.35rem);
-            letter-spacing: 0.12em;
-            color: var(--ink);
-            margin: 0 0 0.5rem;
-        }
-        .dos-hero .sub {
-            font-size: 0.92rem;
-            color: var(--muted);
-            font-weight: 300;
-            letter-spacing: 0.06em;
-        }
-        .dos-toolbar {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: center;
-            gap: 0.75rem 1rem;
-            margin-bottom: 2rem;
-        }
-        .dos-toolbar label {
-            font-size: 0.8rem;
-            color: var(--muted);
-            margin: 0;
-        }
-        .dos-toolbar input[type="date"] {
-            border: 1px solid var(--line);
-            background: var(--surface);
-            padding: 0.45rem 0.65rem;
-            border-radius: 4px;
-            font-size: 0.95rem;
-        }
-        .dos-btn {
-            border: 1px solid var(--accent);
-            background: var(--surface);
-            color: var(--accent);
-            padding: 0.45rem 1.1rem;
-            border-radius: 4px;
-            font-size: 0.88rem;
-            letter-spacing: 0.06em;
-            transition: background 0.2s, color 0.2s;
-        }
-        .dos-btn:hover {
-            background: var(--accent);
-            color: #fff;
-        }
-        .dos-section {
-            background: var(--surface);
-            border: 1px solid var(--line);
-            border-radius: 2px;
-            margin-bottom: 1.75rem;
-            overflow: hidden;
-            box-shadow: 0 1px 0 rgba(28, 25, 23, 0.04);
-        }
-        .dos-section-head {
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid var(--line);
-            background: linear-gradient(180deg, #faf8f5 0%, var(--surface) 100%);
-        }
-        .dos-section-head h2 {
-            font-family: 'Cormorant Garamond', Georgia, serif;
-            font-size: 1.25rem;
-            font-weight: 600;
-            letter-spacing: 0.1em;
-            margin: 0;
-            color: var(--accent);
-        }
-        .dos-section-head p {
-            margin: 0.35rem 0 0;
-            font-size: 0.82rem;
-            color: var(--muted);
-            font-weight: 300;
-        }
-        .dos-section-body { padding: 0; }
-        .dos-table-wrap { overflow-x: auto; }
-        table.dos-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.88rem;
-        }
-        table.dos-table th,
-        table.dos-table td {
-            padding: 0.65rem 0.85rem;
-            border-bottom: 1px solid var(--line);
-            text-align: left;
-            vertical-align: top;
-        }
-        table.dos-table th {
-            font-weight: 500;
-            color: var(--muted);
-            font-size: 0.78rem;
-            letter-spacing: 0.04em;
-            text-transform: none;
-            background: rgba(231, 226, 217, 0.35);
-        }
-        table.dos-table tbody tr:hover td {
-            background: var(--accent-soft);
-        }
-        .dos-stat-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 1px;
-            background: var(--line);
-            border-top: 1px solid var(--line);
-        }
-        .dos-stat {
-            background: var(--surface);
-            padding: 1.1rem 1rem;
-            text-align: center;
-        }
-        .dos-stat .num {
-            font-family: 'Cormorant Garamond', Georgia, serif;
-            font-size: 1.65rem;
-            font-weight: 600;
-            color: var(--ink);
-            line-height: 1.2;
-        }
-        .dos-stat .lbl {
-            font-size: 0.75rem;
-            color: var(--muted);
-            margin-top: 0.35rem;
-            letter-spacing: 0.05em;
-        }
-        .badge-soft {
-            display: inline-block;
-            padding: 0.2rem 0.5rem;
-            font-size: 0.72rem;
-            border-radius: 2px;
-            background: var(--accent-soft);
-            color: var(--accent);
-        }
-        .text-ok { color: var(--ok); }
-        .text-warn { color: var(--warn); }
-        .dos-empty {
-            padding: 2rem 1.25rem;
-            text-align: center;
-            color: var(--muted);
-            font-size: 0.9rem;
-            font-weight: 300;
-        }
-        .dos-err {
-            padding: 1rem 1.25rem;
-            color: var(--warn);
-            font-size: 0.9rem;
-        }
-        .dos-loading {
-            text-align: center;
-            padding: 3rem;
-            color: var(--muted);
-            font-weight: 300;
-        }
-        @media print {
-            .navbar, .dos-toolbar, .marquee-container, #loginBtn, #logoutBtn, #cleaningBtn, #languageSwitcher { display: none !important; }
-            body { background: #fff; }
-            .dos-section { break-inside: avoid; box-shadow: none; }
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>今日營運總表｜入口</title>
+  <!--
+    【複製到 NF 倉庫根目錄】檔名：daily_ops_summary.html
+    固定網址：https://s2172376321.github.io/NF/daily_ops_summary.html
+  -->
+  <style>
+    body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+         background:linear-gradient(165deg,#f7f5f0 0%,#efeae2 50%,#f5f2ec 100%);
+         font-family:'Segoe UI','Microsoft JhengHei','Noto Sans TC',sans-serif;padding:24px;box-sizing:border-box;}
+    .card{max-width:440px;width:100%;background:#fffcf7;border:1px solid #e7e2d9;border-radius:4px;padding:40px 32px;
+          box-shadow:0 16px 48px rgba(28,25,23,.06);text-align:center;}
+    h1{font-family:Georgia,'Times New Roman',serif;font-size:1.35rem;font-weight:600;color:#1c1917;margin:0 0 10px;letter-spacing:.12em;}
+    p{font-size:.88rem;color:#78716c;margin:0 0 20px;line-height:1.65;font-weight:300;}
+    .btn{display:inline-block;padding:14px 28px;font-size:.95rem;font-weight:600;color:#fff;text-decoration:none;
+         border-radius:3px;border:1px solid #7c6a58;background:#7c6a58;letter-spacing:.08em;
+         transition:background .2s,border-color .2s,transform .15s;}
+    .btn:hover,.btn:focus{background:#5c4d3f;border-color:#5c4d3f;transform:translateY(-1px);outline:none;}
+    .hint{margin-top:22px;font-size:.72rem;color:#a8a29e;line-height:1.5;}
+  </style>
+  <script>
+  const API_HOST = 'https://prisoner-pointer-deutsche-lead.trycloudflare.com';
+  const API_HOST_PORT3000 = '';
+
+  function _allowedTunnelUrl(s) {
+    if (!s || typeof s !== 'string') return false;
+    try {
+      var u = new URL(s.trim());
+      if (u.protocol !== 'https:') return false;
+      var h = (u.hostname || '').toLowerCase();
+      if (h.endsWith('.trycloudflare.com')) return true;
+      if (h.indexOf('ngrok') !== -1 && (
+            h.endsWith('.ngrok-free.app') || h.endsWith('.ngrok.io') || h.endsWith('.ngrok.app')))
+        return true;
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  var TARGET_URL = '';
+  (function(){
+    var qs = new URLSearchParams(window.location.search || '');
+    var fromQuery = (qs.get('host') || qs.get('api') || '').trim();
+    var base = '';
+    if (_allowedTunnelUrl(fromQuery)) {
+      base = fromQuery.replace(/\/+$/, '');
+    } else {
+      var raw = (typeof API_HOST === 'string' ? API_HOST.trim() : '');
+      if (raw && /^https?:\/\//i.test(raw) && raw.indexOf('請貼上') === -1) {
+        base = raw.replace(/\/+$/, '');
+      }
+    }
+    TARGET_URL = base ? (base + '/daily_ops_summary') : '';
+  })();
+  </script>
+  <script>
+  (function(){
+    if (!TARGET_URL) return;
+    try {
+      var m = document.createElement('meta');
+      m.setAttribute('http-equiv', 'refresh');
+      m.setAttribute('content', '0;url=' + TARGET_URL);
+      document.head.appendChild(m);
+      window.location.replace(TARGET_URL);
+    } catch (e) {}
+  })();
+  </script>
 </head>
 <body>
-    {% include '_navbar.html' %}
-
-    <div class="dos-wrap">
-        <header class="dos-hero">
-            <h1>今日營運總表</h1>
-            <p class="sub">蛋雞舍巡檢 · 洗蛋與破蛋 · 雞蛋出貨</p>
-        </header>
-
-        <div class="dos-toolbar no-print">
-            <div class="d-flex align-items-center gap-2">
-                <label for="dosDate">日期</label>
-                <input type="date" id="dosDate" {% if not logged_in %}readonly title="請登入以查詢其他日期"{% endif %}>
-            </div>
-            <button type="button" class="dos-btn" id="dosRefresh">重新載入</button>
-        </div>
-
-        <div id="dosError" class="dos-err" style="display:none;"></div>
-        <div id="dosLoading" class="dos-loading">載入中…</div>
-        <div id="dosContent" style="display:none;"></div>
-    </div>
-
-    <script>
-    (function() {
-        const loadingEl = document.getElementById('dosLoading');
-        const contentEl = document.getElementById('dosContent');
-        const errEl = document.getElementById('dosError');
-        const dateInput = document.getElementById('dosDate');
-        const refreshBtn = document.getElementById('dosRefresh');
-
-        function todayStr() {
-            const d = new Date();
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return y + '-' + m + '-' + day;
-        }
-
-        function esc(s) {
-            if (s === null || s === undefined) return '';
-            return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-        }
-
-        function fmtNum(n) {
-            if (n === null || n === undefined || n === '') return '—';
-            if (typeof n === 'number' && !isNaN(n)) {
-                return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, '');
-            }
-            return esc(n);
-        }
-
-        async function load() {
-            errEl.style.display = 'none';
-            errEl.textContent = '';
-            loadingEl.style.display = 'block';
-            contentEl.style.display = 'none';
-            const d = dateInput.value || todayStr();
-            try {
-                const res = await fetch('/api/daily_ops_summary?date=' + encodeURIComponent(d), {
-                    credentials: 'same-origin'
-                });
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok || !data.success) {
-                    throw new Error(data.error || ('HTTP ' + res.status));
-                }
-                render(data);
-                loadingEl.style.display = 'none';
-                contentEl.style.display = 'block';
-            } catch (e) {
-                loadingEl.style.display = 'none';
-                contentEl.style.display = 'none';
-                errEl.style.display = 'block';
-                errEl.textContent = '無法載入：' + (e.message || e);
-            }
-        }
-
-        function render(data) {
-            const dateLabel = esc(data.date || '');
-            let html = '';
-
-            html += '<section class="dos-section">';
-            html += '<div class="dos-section-head"><h2>蛋雞舍 · 巡檢</h2><p>' + dateLabel + ' 各時段紀錄</p></div>';
-            html += '<div class="dos-section-body">';
-            if (!data.inspections || !data.inspections.length) {
-                html += '<div class="dos-empty">本日尚無巡檢資料，或欄位皆為空。</div>';
-            } else {
-                html += '<div class="dos-table-wrap"><table class="dos-table"><thead><tr>';
-                html += '<th>時段</th><th>區域</th><th>填報</th><th>溫℃／濕％</th><th>熱緊迫</th><th>隔離／汰除</th>';
-                html += '</tr></thead><tbody>';
-                data.inspections.forEach(function(row) {
-                    html += '<tr>';
-                    html += '<td>' + esc(row.time) + '</td>';
-                    html += '<td>' + esc(row.region) + '</td>';
-                    html += '<td>' + esc(row.name) + '</td>';
-                    html += '<td>' + fmtNum(row.temperature) + '／' + fmtNum(row.humidity) + '</td>';
-                    html += '<td>' + esc(row.heat_stress_level) + '</td>';
-                    html += '<td>' + fmtNum(row.isolated_count) + '／' + fmtNum(row.removed_count) + '</td>';
-                    html += '</tr>';
-                });
-                html += '</tbody></table></div>';
-            }
-            html += '</div></section>';
-
-            const eh = data.egg_harvest || {};
-            html += '<section class="dos-section">';
-            html += '<div class="dos-section-head"><h2>洗蛋 · 破蛋 · 撿蛋</h2><p>蛋雞舍採收入庫（顆）</p></div>';
-            html += '<div class="dos-stat-grid">';
-            html += '<div class="dos-stat"><div class="num">' + fmtNum(eh.washed) + '</div><div class="lbl">完整洗選入庫</div></div>';
-            html += '<div class="dos-stat"><div class="num">' + fmtNum(eh.broken) + '</div><div class="lbl">破蛋</div></div>';
-            html += '<div class="dos-stat"><div class="num">' + fmtNum(eh.pickup_count) + '</div><div class="lbl">撿蛋合計</div></div>';
-            html += '</div></section>';
-
-            const eb = data.egg_balance;
-            html += '<section class="dos-section">';
-            html += '<div class="dos-section-head"><h2>庫存與對帳摘要</h2><p>與「每日雞蛋異常」邏輯一致（夜庫存 · 洗蛋 · 出貨）</p></div>';
-            html += '<div class="dos-section-body">';
-            if (!eb) {
-                html += '<div class="dos-empty">無對帳摘要（可能尚無夜庫存或資料未齊）。</div>';
-            } else {
-                const st = esc(eb.status || '');
-                const abn = eb.abnormal ? '<span class="badge-soft text-warn">異常</span>' : '<span class="badge-soft text-ok">正常</span>';
-                html += '<div class="dos-table-wrap"><table class="dos-table"><tbody>';
-                html += '<tr><th style="width:38%">狀態</th><td>' + abn + ' ' + st + '</td></tr>';
-                html += '<tr><th>洗蛋入庫（顆）</th><td>' + fmtNum(eb.washed_in_stock) + '</td></tr>';
-                html += '<tr><th>出貨雞蛋（顆）</th><td>' + fmtNum(eb.egg_shipped_pcs) + '</td></tr>';
-                html += '<tr><th>夜庫存（顆）</th><td>' + fmtNum(eb.egg_night_inventory) + '</td></tr>';
-                html += '<tr><th>預期夜庫存</th><td>' + fmtNum(eb.expected_night_inventory) + '</td></tr>';
-                html += '<tr><th>差異</th><td>' + fmtNum(eb.diff) + '</td></tr>';
-                if (eb.anomaly_type) html += '<tr><th>說明</th><td>' + esc(eb.anomaly_type) + '</td></tr>';
-                if (eb.warnings) html += '<tr><th>備註</th><td>' + esc(eb.warnings) + '</td></tr>';
-                html += '</tbody></table></div>';
-            }
-            html += '</div></section>';
-
-            const ship = data.shipping_lines || [];
-            const tot = (data.shipping_totals && data.shipping_totals.egg_shipped_pcs) != null
-                ? data.shipping_totals.egg_shipped_pcs : null;
-            html += '<section class="dos-section">';
-            html += '<div class="dos-section-head"><h2>雞蛋出貨明細</h2><p>合計 <strong>' + fmtNum(tot) + '</strong> 顆（含退貨沖銷）</p></div>';
-            html += '<div class="dos-section-body">';
-            if (!ship.length) {
-                html += '<div class="dos-empty">本日無雞蛋出貨紀錄。</div>';
-            } else {
-                html += '<div class="dos-table-wrap"><table class="dos-table"><thead><tr>';
-                html += '<th>客戶</th><th>品名</th><th>數量</th><th>單位</th><th>金額</th><th>單據</th>';
-                html += '</tr></thead><tbody>';
-                ship.forEach(function(row) {
-                    html += '<tr>';
-                    html += '<td>' + esc(row.customer_name) + '<div class="small text-muted">' + esc(row.customer_id) + '</div></td>';
-                    html += '<td>' + esc(row.product_name) + '</td>';
-                    html += '<td>' + fmtNum(row.quantity) + '</td>';
-                    html += '<td>' + esc(row.raw_unit) + '</td>';
-                    html += '<td>' + fmtNum(row.amount) + '</td>';
-                    html += '<td>' + esc(row.document_type) + '</td>';
-                    html += '</tr>';
-                });
-                html += '</tbody></table></div>';
-            }
-            html += '</div></section>';
-
-            contentEl.innerHTML = html;
-        }
-
-        dateInput.value = todayStr();
-        refreshBtn.addEventListener('click', load);
-        dateInput.addEventListener('change', load);
-        load();
-    })();
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+  <div class="card">
+    <h1>今日營運總表</h1>
+    <p>正在前往農場小工具（蛋雞舍巡檢 · 洗蛋 · 出貨）…</p>
+    <a id="manual" class="btn" href="#">手動開啟</a>
+    <p class="hint">若無法開啟，請稍後再試、確認採收主機隧道已啟動，或洽資訊人員。<br>
+    臨時網址：<code style="font-size:0.68rem;">?host=https://…trycloudflare.com</code></p>
+  </div>
+  <script>
+  (function(){
+    var a = document.getElementById('manual');
+    if (a && TARGET_URL) a.href = TARGET_URL;
+    else if (a) {
+      a.addEventListener('click', function(e){
+        e.preventDefault();
+        alert('入口網址尚未設定，請稍後再試。');
+      });
+    }
+  })();
+  </script>
 </body>
 </html>
