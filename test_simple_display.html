@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>出勤資料顯示測試</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .login-section { margin-bottom: 20px; padding: 20px; border: 1px solid #ccc; }
+        .data-section { margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .error { color: red; }
+        .success { color: green; }
+        button { padding: 10px 20px; margin: 5px; }
+        .link-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #f0f7ff;
+            border: 1px solid #b8d4f0;
+            border-radius: 8px;
+        }
+        .link-bar a.btn-link {
+            display: inline-block;
+            padding: 8px 14px;
+            background: #24292f;
+            color: #fff !important;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .link-bar a.btn-link.secondary { background: #0969da; }
+        .link-bar a.btn-link.gh-pages { background: #1f883d; }
+        .link-bar .hint { font-size: 12px; color: #57606a; width: 100%; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>出勤資料顯示測試</h1>
+
+        <!-- GitHub／Pages 捷徑（NF 專案）；若將本檔放入 NF 倉庫，隧道腳本可替換下方 API_HOST -->
+        <div class="link-bar">
+            <span style="font-weight:bold;color:#24292f;">捷徑</span>
+            <a class="btn-link" id="linkGhRepo" href="https://github.com/s2172376321/NF" target="_blank" rel="noopener">NF 原始碼（GitHub）</a>
+            <a class="btn-link secondary" id="linkGhPages" href="#" target="_blank" rel="noopener">NF 首頁（GitHub Pages）</a>
+            <a class="btn-link gh-pages" id="linkInspection" href="#" target="_blank" rel="noopener">蛋雞巡檢 inspection.html</a>
+            <a class="btn-link secondary" id="linkSelfPage" href="#" target="_blank" rel="noopener">本頁 test_simple_display.html</a>
+            <span class="hint">後端請設下方 <code>API_HOST</code>（隧道推送會寫入；需將本檔放在 NF 倉庫根目錄並列入 <code>GITHUB_EXTRA_API_HOST_FILES</code>）。本機可留空。</span>
+        </div>
+        
+        <!-- 登入區域 -->
+        <div class="login-section">
+            <h2>登入測試</h2>
+            <div>
+                <label>帳號: <input type="text" id="username" value="1224"></label>
+                <label>密碼: <input type="password" id="password" value="JI#cl3hj/ au/6"></label>
+                <button onclick="login()">登入</button>
+                <button onclick="logout()">登出</button>
+            </div>
+            <div id="loginStatus"></div>
+        </div>
+        
+        <!-- 資料載入區域 -->
+        <div class="data-section">
+            <h2>資料載入測試</h2>
+            <div>
+                <label>開始日期: <input type="date" id="startDate" value="2025-01-01"></label>
+                <label>結束日期: <input type="date" id="endDate" value="2025-01-31"></label>
+                <button onclick="loadData()">載入資料</button>
+            </div>
+            <div id="dataStatus"></div>
+            
+            <!-- 資料顯示表格 -->
+            <div id="dataTable" style="display: none;">
+                <h3>出勤資料</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>姓名</th>
+                            <th>時間</th>
+                            <th>來源</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 日誌區域 -->
+        <div class="data-section">
+            <h2>操作日誌</h2>
+            <div id="log" style="height: 200px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; background-color: #f9f9f9;"></div>
+        </div>
+    </div>
+
+    <script>
+        /** 與 NF / github_tunnel_push 相同：隧道推送時替換；若本機或同網域開此頁可維持空字串。 */
+        const API_HOST = '';
+        /** 第二條隧道（網路菜車 :3000），靜態頁僅連結時通常不用；保留供複製到 NF 專案時一併被替換。 */
+        const API_HOST_PORT3000 = '';
+        /** GitHub Pages 上 NF 專案根目錄（不含結尾 /）。 */
+        const GH_PAGES_NF_BASE = 'https://s2172376321.github.io/NF';
+
+        function apiBase() {
+            const h = (typeof API_HOST === 'string' && API_HOST) ? API_HOST.trim().replace(/\/$/, '') : '';
+            return h;
+        }
+
+        function apiUrl(path) {
+            const p = path.startsWith('/') ? path : '/' + path;
+            const base = apiBase();
+            return base ? base + p : p;
+        }
+
+        (function initGithubLinks() {
+            const base = GH_PAGES_NF_BASE.replace(/\/$/, '');
+            const root = document.getElementById('linkGhPages');
+            const ins = document.getElementById('linkInspection');
+            const selfPg = document.getElementById('linkSelfPage');
+            if (root) root.href = base + '/index.html';
+            if (ins) ins.href = base + '/inspection.html';
+            if (selfPg) selfPg.href = base + '/test_simple_display.html';
+        })();
+
+        let isLoggedIn = false;
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            log(`嘗試登入: ${username}`);
+            
+            try {
+                const response = await fetch(apiUrl('/login'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ username, password, login_type: 'nav' })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    isLoggedIn = true;
+                    document.getElementById('loginStatus').innerHTML = `<span class="success">登入成功: ${data.user.username} (${data.user.name})</span>`;
+                    log(`登入成功: ${data.user.username} (${data.user.name})`);
+                } else {
+                    document.getElementById('loginStatus').innerHTML = `<span class="error">登入失敗: ${data.error}</span>`;
+                    log(`登入失敗: ${data.error}`);
+                }
+            } catch (error) {
+                document.getElementById('loginStatus').innerHTML = `<span class="error">登入錯誤: ${error.message}</span>`;
+                log(`登入錯誤: ${error.message}`);
+            }
+        }
+        
+        async function logout() {
+            try {
+                const response = await fetch(apiUrl('/logout'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    isLoggedIn = false;
+                    document.getElementById('loginStatus').innerHTML = '<span class="success">已登出</span>';
+                    log('已登出');
+                    document.getElementById('dataTable').style.display = 'none';
+                }
+            } catch (error) {
+                log(`登出錯誤: ${error.message}`);
+            }
+        }
+        
+        async function loadData() {
+            if (!isLoggedIn) {
+                document.getElementById('dataStatus').innerHTML = '<span class="error">請先登入</span>';
+                return;
+            }
+            
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            log(`載入資料: ${startDate} 到 ${endDate}`);
+            document.getElementById('dataStatus').innerHTML = '載入中...';
+            
+            try {
+                const url = apiUrl(`/api/attendance?start_date=${startDate}&end_date=${endDate}`);
+                log(`API請求: ${url}`);
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    document.getElementById('dataStatus').innerHTML = `<span class="success">載入成功，共 ${data.attendance_data.length} 筆記錄</span>`;
+                    log(`載入成功，共 ${data.attendance_data.length} 筆記錄`);
+                    
+                    // 顯示資料
+                    displayData(data.attendance_data);
+                } else {
+                    document.getElementById('dataStatus').innerHTML = `<span class="error">載入失敗: ${data.message || '未知錯誤'}</span>`;
+                    log(`載入失敗: ${data.message || '未知錯誤'}`);
+                }
+            } catch (error) {
+                document.getElementById('dataStatus').innerHTML = `<span class="error">載入錯誤: ${error.message}</span>`;
+                log(`載入錯誤: ${error.message}`);
+            }
+        }
+        
+        function displayData(records) {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+            
+            records.forEach(record => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${record.date}</td>
+                    <td>${record.worker_name}</td>
+                    <td>${record.time}</td>
+                    <td>${record.source}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+            
+            document.getElementById('dataTable').style.display = 'block';
+            log(`顯示 ${records.length} 筆記錄`);
+        }
+        
+        // 頁面載入時檢查登入狀態
+        window.addEventListener('load', async () => {
+            log('頁面載入完成，檢查登入狀態...');
+            
+            try {
+                const response = await fetch(apiUrl('/check_auth'));
+                const data = await response.json();
+                
+                if (data.is_authenticated) {
+                    isLoggedIn = true;
+                    document.getElementById('loginStatus').innerHTML = `<span class="success">已登入: ${data.user.username}</span>`;
+                    log(`已登入: ${data.user.username}`);
+                } else {
+                    log('未登入');
+                }
+            } catch (error) {
+                log(`檢查登入狀態錯誤: ${error.message}`);
+            }
+        });
+    </script>
+</body>
+</html>
