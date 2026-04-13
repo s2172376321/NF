@@ -30,21 +30,38 @@
     <p class="lead">沒有 Telegram 帳號也可透過此按鈕查看聊天室網頁。</p>
     <p class="note">和採收主站相同類型之 Cloudflare 免費隧道（<code>*.trycloudflare.com</code>）。此連結對應本機 <strong>群組記事本 web_notebook</strong>（連接埠 <strong>8001</strong>）；公開網址不會出現 <code>:8001</code>，由隧道轉發到本機。</p>
     <ul class="btn-row">
-      <li><a id="mainBtn" class="btn btn-green" href="https://newton-washing-sega-construction.trycloudflare.com/start" target="_blank" rel="noopener noreferrer">進入群組記事本</a></li>
-      <li><a id="publicBtn" class="btn btn-public" href="https://newton-washing-sega-construction.trycloudflare.com/start" target="_blank" rel="noopener noreferrer">公開入口（連結同步更新）</a></li>
+      <li><a id="mainBtn" class="btn btn-green" href="https://newton-washing-sega-construction.trycloudflare.com/?chat_id=-5186917090" target="_blank" rel="noopener noreferrer">進入群組記事本</a></li>
+      <li><a id="publicBtn" class="btn btn-public" href="https://newton-washing-sega-construction.trycloudflare.com/?chat_id=-5186917090" target="_blank" rel="noopener noreferrer">公開入口（連結同步更新）</a></li>
     </ul>
     <p class="tunnel-tip">此面載入後，會向 web_notebook 的 <code>/api/tunnel/status</code> 取得最新連結（與本機 portal 相同來源）；若無法連線則使用本次推送之網址。</p>
-    <div id="liveUrl" class="url">https://newton-washing-sega-construction.trycloudflare.com/start</div>
+    <div id="liveUrl" class="url">https://newton-washing-sega-construction.trycloudflare.com/?chat_id=-5186917090</div>
   </div>
   <script>
 (function () {
+  var CHAT_ID = -5186917090;
+  function toChatRoomUrl(u) {
+    if (!u) return "";
+    if (!CHAT_ID) return u.replace(/\/+$/, "");
+    try {
+      var x = new URL(u.trim());
+      var path = (x.pathname || "/").replace(/\/+$/, "") || "/";
+      var has = x.searchParams.has("chat_id");
+      if (path !== "/" && path !== "/start" && !has) return u.replace(/\/+$/, "");
+      var o = new URL(x.origin + "/");
+      o.searchParams.set("chat_id", String(CHAT_ID));
+      return o.toString().replace(/\/+$/, "");
+    } catch (e) {
+      return u.replace(/\/+$/, "");
+    }
+  }
   var ORIGIN = "https://newton-washing-sega-construction.trycloudflare.com";
-  var FALLBACK = "https://newton-washing-sega-construction.trycloudflare.com/start";
+  var FALLBACK = "https://newton-washing-sega-construction.trycloudflare.com/?chat_id=-5186917090";
   var mainBtn = document.getElementById("mainBtn");
   var pubBtn = document.getElementById("publicBtn");
   var urlEl = document.getElementById("liveUrl");
   function setAll(u) {
     if (!u) u = FALLBACK;
+    u = toChatRoomUrl(u);
     mainBtn.href = u;
     pubBtn.href = u;
     urlEl.textContent = u;
