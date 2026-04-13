@@ -1,63 +1,126 @@
-<!doctype html>
-<html lang="zh-Hant">
+<!DOCTYPE html>
+<html lang="zh-TW">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>群組記事本入口</title>
   <style>
     body{margin:0;min-height:100vh;font-family:-apple-system,Segoe UI,Roboto,Noto Sans TC,sans-serif;
-         background:linear-gradient(160deg,#f4f7f0 0%,#e8efe4 50%,#f0ebe3 100%);padding:24px;box-sizing:border-box;}
+    background:linear-gradient(160deg,#f4f7f0 0%,#e8efe4 50%,#f0ebe3 100%);padding:24px;box-sizing:border-box;}
     .card{max-width:680px;margin:0 auto;background:#fff;border-radius:20px;padding:32px 28px;
-          box-shadow:0 12px 40px rgba(45,74,62,.12);text-align:center;}
+    box-shadow:0 12px 40px rgba(45,74,62,.12);text-align:center;}
     h1{font-size:1.45rem;color:#2d4a3e;margin:0 0 10px;font-weight:600;}
     .lead{font-size:.95rem;color:#64748b;margin:0 0 8px;line-height:1.55;}
     .note{font-size:.85rem;color:#475569;margin:0 0 22px;line-height:1.55;text-align:left;
-          background:#f8fafc;border-radius:12px;padding:14px 16px;border-left:4px solid #1677ff;}
-    .btn-row{list-style:none;padding:0;margin:0 0 8px 0;}
-    .btn-row li+li{margin-top:12px;}
+    background:#f8fafc;border-radius:12px;padding:14px 16px;border-left:4px solid #1677ff;}
     .btn{display:block;width:100%;padding:18px 16px;font-size:1.05rem;font-weight:600;color:#fff;text-decoration:none;
-         border-radius:14px;box-sizing:border-box;}
+    border-radius:14px;background:linear-gradient(90deg,#1677ff,#36a2ff);
+    box-shadow:0 6px 20px rgba(22,119,255,.22);}
     .btn:hover,.btn:focus{filter:brightness(1.05);outline:none;}
-    .btn-green{background:linear-gradient(90deg,#06C755,#00b96b);box-shadow:0 6px 20px rgba(6,199,85,.22);}
-    .btn-public{background:linear-gradient(90deg,#1677ff,#36a2ff);box-shadow:0 6px 20px rgba(22,119,255,.22);}
-    .tunnel-tip{font-size:.8rem;color:#64748b;margin:8px 0 0 0;line-height:1.45;}
-    .url{margin-top:14px;font-size:.82rem;color:#64748b;word-break:break-all;}
+    .url{margin-top:16px;font-size:.82rem;color:#64748b;word-break:break-all;}
   </style>
 </head>
 <body>
   <div class="card">
     <h1>群組記事本入口</h1>
     <p class="lead">沒有 Telegram 帳號也可透過此按鈕查看聊天室網頁。</p>
-    <p class="note">和採收主站相同類型之 Cloudflare 免費隧道（<code>*.trycloudflare.com</code>）。此連結對應本機 <strong>群組記事本 web_notebook</strong>（連接埠 <strong>8001</strong>）；公開網址不會出現 <code>:8001</code>，由隧道轉發到本機。</p>
-    <ul class="btn-row">
-      <li><a id="mainBtn" class="btn btn-green" href="https://wendy-technological-westminster-indicate.trycloudflare.com/start" target="_blank" rel="noopener noreferrer">進入群組記事本</a></li>
-      <li><a id="publicBtn" class="btn btn-public" href="https://wendy-technological-westminster-indicate.trycloudflare.com/start" target="_blank" rel="noopener noreferrer">公開入口（連結同步更新）</a></li>
-    </ul>
-    <p class="tunnel-tip">此面載入後，會向 web_notebook 的 <code>/api/tunnel/status</code> 取得最新連結（與本機 portal 相同來源）；若無法連線則使用本次推送之網址。</p>
-    <div id="liveUrl" class="url">https://wendy-technological-westminster-indicate.trycloudflare.com/start</div>
+    <p class="note">
+      和採收主站相同類型之 Cloudflare 免費隧道（ *.trycloudflare.com ）。此連結對應本機 群組記事本 web_notebook （連接埠 8001 ）；公開網址不會出現:8001 ，由隧道轉發到本機。
+    </p>
+    <a id="linkPort8001" class="btn" href="#">進入群組記事本</a>
+    <div class="url" id="tunnelUrl">載入中…</div>
   </div>
+
   <script>
-(function () {
-  var ORIGIN = "https://wendy-technological-westminster-indicate.trycloudflare.com";
-  var FALLBACK = "https://wendy-technological-westminster-indicate.trycloudflare.com/start";
-  var mainBtn = document.getElementById("mainBtn");
-  var pubBtn = document.getElementById("publicBtn");
-  var urlEl = document.getElementById("liveUrl");
-  function setAll(u) {
-    if (!u) u = FALLBACK;
-    mainBtn.href = u;
-    pubBtn.href = u;
-    urlEl.textContent = u;
-  }
-  if (!ORIGIN) {
-    setAll(FALLBACK);
-    return;
-  }
-  fetch(ORIGIN + "/api/tunnel/status", { method: "GET", mode: "cors", cache: "no-store" })
-    .then(function (r) { return r.json(); })
-    .then(function (d) { if (d && d.url) setAll(d.url); else setAll(FALLBACK); })
-    .catch(function () { setAll(FALLBACK); });
-})();
+    /**
+     * 與「網路菜車」相同方式：
+     * 緊急覆寫（免重新部署）：?p8001=https://xxxx.trycloudflare.com/start
+     * 或 ?tunnel= 同上
+     */
+    const CHAT_ID = -5186917090;
+    const API_HOST_PORT8001 = "https://wendy-technological-westminster-indicate.trycloudflare.com/?chat_id=-5186917090";
+
+    function toChatRoomUrl(u) {
+      if (!u) return "";
+      if (!CHAT_ID) return u.replace(/\/+$/, "");
+      try {
+        const x = new URL(u.trim());
+        const path = (x.pathname || "/").replace(/\/+$/, "") || "/";
+        const has = x.searchParams.has("chat_id");
+        if (path !== "/" && path !== "/start" && !has) return u.replace(/\/+$/, "");
+        const o = new URL(x.origin + "/");
+        o.searchParams.set("chat_id", String(CHAT_ID));
+        return o.toString().replace(/\/+$/, "");
+      } catch (e) {
+        return u.replace(/\/+$/, "");
+      }
+    }
+
+    function _allowedTunnelUrl(s) {
+      if (!s || typeof s !== 'string') return false;
+      try {
+        const u = new URL(s.trim());
+        if (u.protocol !== 'https:') return false;
+        const h = (u.hostname || '').toLowerCase();
+        if (h.endsWith('.trycloudflare.com')) return true;
+        if (h.includes('ngrok') && (
+          h.endsWith('.ngrok-free.app') || h.endsWith('.ngrok.io') || h.endsWith('.ngrok.app')
+        )) return true;
+        return false;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function _originOf(u) {
+      try { return new URL(u.trim()).origin; } catch (e) { return ""; }
+    }
+
+    (function(){
+      const linkEl = document.getElementById('linkPort8001');
+      const urlEl = document.getElementById('tunnelUrl');
+      if (!linkEl || !urlEl) return;
+      const qs = new URLSearchParams(window.location.search || '');
+      const fromQuery = (qs.get('p8001') || qs.get('tunnel') || '').trim();
+      const fromConst = (typeof API_HOST_PORT8001 === 'string' ? API_HOST_PORT8001.trim() : '');
+      let base = '';
+      if (_allowedTunnelUrl(fromQuery)) {
+        base = fromQuery.replace(/\/+$/, '');
+      } else if (fromConst && /^https?:\/\//i.test(fromConst) && fromConst.indexOf('請貼上') === -1) {
+        base = fromConst.replace(/\/+$/, '');
+      }
+
+      function apply(raw) {
+        const room = toChatRoomUrl(raw);
+        if (room) {
+          linkEl.href = room;
+          urlEl.textContent = room;
+        } else {
+          linkEl.addEventListener('click', function(e){
+            e.preventDefault();
+            alert('入口網址尚未設定，請稍後再試。');
+          });
+          urlEl.textContent = '尚未設定外網連結';
+        }
+      }
+
+      if (!base) {
+        apply('');
+        return;
+      }
+      const origin = _originOf(base);
+      if (!origin) {
+        apply(base);
+        return;
+      }
+      fetch(origin + '/api/tunnel/status', { method: 'GET', mode: 'cors', cache: 'no-store' })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d && d.url) apply(d.url);
+          else apply(base);
+        })
+        .catch(function () { apply(base); });
+    })();
   </script>
 </body>
 </html>
