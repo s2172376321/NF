@@ -9,10 +9,7 @@
     background:linear-gradient(160deg,#f4f7f0 0%,#e8efe4 50%,#f0ebe3 100%);padding:24px;box-sizing:border-box;}
     .card{max-width:680px;margin:0 auto;background:#fff;border-radius:20px;padding:32px 28px;
     box-shadow:0 12px 40px rgba(45,74,62,.12);text-align:center;}
-    h1{font-size:1.45rem;color:#2d4a3e;margin:0 0 10px;font-weight:600;}
-    .lead{font-size:.95rem;color:#64748b;margin:0 0 8px;line-height:1.55;}
-    .note{font-size:.85rem;color:#475569;margin:0 0 22px;line-height:1.55;text-align:left;
-    background:#f8fafc;border-radius:12px;padding:14px 16px;border-left:4px solid #1677ff;}
+    h1{font-size:1.45rem;color:#2d4a3e;margin:0 0 24px;font-weight:600;}
     .btn{display:block;width:100%;padding:18px 16px;font-size:1.05rem;font-weight:600;color:#fff;text-decoration:none;
     border-radius:14px;background:linear-gradient(90deg,#1677ff,#36a2ff);
     box-shadow:0 6px 20px rgba(22,119,255,.22);}
@@ -23,10 +20,6 @@
 <body>
   <div class="card">
     <h1>群組記事本入口</h1>
-    <p class="lead">沒有 Telegram 帳號也可透過此按鈕查看聊天室網頁。</p>
-    <p class="note">
-      和採收主站相同類型之 Cloudflare 免費隧道（ *.trycloudflare.com ）。此連結對應本機 群組記事本 web_notebook （連接埠 8001 ）；公開網址不會出現:8001 ，由隧道轉發到本機。
-    </p>
     <a id="linkPort8001" class="btn" href="#">進入群組記事本</a>
     <div class="url" id="tunnelUrl">載入中…</div>
   </div>
