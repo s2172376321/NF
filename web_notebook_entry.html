@@ -6,15 +6,17 @@
   <title>群組記事本入口</title>
   <style>
     body{margin:0;min-height:100vh;font-family:-apple-system,Segoe UI,Roboto,Noto Sans TC,sans-serif;
-    background:linear-gradient(160deg,#f4f7f0 0%,#e8efe4 50%,#f0ebe3 100%);padding:24px;box-sizing:border-box;}
-    .card{max-width:680px;margin:0 auto;background:#fff;border-radius:20px;padding:32px 28px;
-    box-shadow:0 12px 40px rgba(45,74,62,.12);text-align:center;}
-    h1{font-size:1.45rem;color:#2d4a3e;margin:0 0 24px;font-weight:600;}
-    .btn{display:block;width:100%;padding:18px 16px;font-size:1.05rem;font-weight:600;color:#fff;text-decoration:none;
-    border-radius:14px;background:linear-gradient(90deg,#1677ff,#36a2ff);
-    box-shadow:0 6px 20px rgba(22,119,255,.22);}
+    background:linear-gradient(160deg,#f4f7f0 0%,#e8efe4 50%,#f0ebe3 100%);
+    padding:max(24px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));
+    box-sizing:border-box;display:flex;align-items:center;justify-content:center;}
+    .card{max-width:min(400px,100%);width:100%;margin:0 auto;background:#fff;border-radius:16px;padding:22px 18px 20px;
+    box-shadow:0 8px 28px rgba(45,74,62,.1);text-align:center;}
+    h1{font-size:1.2rem;color:#2d4a3e;margin:0 0 18px;font-weight:600;letter-spacing:.02em;}
+    .btn{display:block;max-width:280px;width:100%;margin:0 auto;padding:14px 16px;font-size:.98rem;font-weight:600;color:#fff;text-decoration:none;
+    border-radius:12px;background:linear-gradient(90deg,#1677ff,#36a2ff);
+    box-shadow:0 4px 16px rgba(22,119,255,.2);}
     .btn:hover,.btn:focus{filter:brightness(1.05);outline:none;}
-    .url{margin-top:16px;font-size:.82rem;color:#64748b;word-break:break-all;}
+    .url{max-width:100%;margin:14px auto 0;font-size:.78rem;color:#64748b;word-break:break-all;line-height:1.5;}
   </style>
 </head>
 <body>
@@ -32,6 +34,7 @@
      */
     const CHAT_ID = -5186917090;
     const API_HOST_PORT8001 = "https://elder-regions-edinburgh-visitors.trycloudflare.com/?chat_id=-5186917090";
+    const ENTRY_STATUS_BASES = ["https://elder-regions-edinburgh-visitors.trycloudflare.com/?chat_id=-5186917090"];
 
     function toChatRoomUrl(u) {
       if (!u) return "";
@@ -74,14 +77,16 @@
       const urlEl = document.getElementById('tunnelUrl');
       if (!linkEl || !urlEl) return;
       const qs = new URLSearchParams(window.location.search || '');
-      const fromQuery = (qs.get('p8001') || qs.get('tunnel') || '').trim();
-      const fromConst = (typeof API_HOST_PORT8001 === 'string' ? API_HOST_PORT8001.trim() : '');
-      let base = '';
-      if (_allowedTunnelUrl(fromQuery)) {
-        base = fromQuery.replace(/\/+$/, '');
-      } else if (fromConst && /^https?:\/\//i.test(fromConst) && fromConst.indexOf('請貼上') === -1) {
-        base = fromConst.replace(/\/+$/, '');
+      const fromQuery = (qs.get('p8001') || qs.get('tunnel') || '').trim().replace(/\/+$/, '');
+      const tryList = [];
+      if (fromQuery && _allowedTunnelUrl(fromQuery)) {
+        tryList.push(fromQuery);
       }
+      ENTRY_STATUS_BASES.forEach(function (u) {
+        var t = String(u || '').trim().replace(/\/+$/, '');
+        if (!t || tryList.indexOf(t) >= 0) return;
+        tryList.push(t);
+      });
 
       function apply(raw) {
         const room = toChatRoomUrl(raw);
@@ -97,22 +102,33 @@
         }
       }
 
-      if (!base) {
+      if (!tryList.length) {
         apply('');
         return;
       }
-      const origin = _originOf(base);
-      if (!origin) {
-        apply(base);
-        return;
+      function tryStatusFetch(idx) {
+        if (idx >= tryList.length) {
+          apply(tryList[0]);
+          return;
+        }
+        var cand = tryList[idx];
+        var o = _originOf(cand);
+        if (!o) {
+          tryStatusFetch(idx + 1);
+          return;
+        }
+        fetch(o + '/api/tunnel/status', { method: 'GET', mode: 'cors', cache: 'no-store' })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (d && d.url) {
+              apply(d.url);
+              return;
+            }
+            tryStatusFetch(idx + 1);
+          })
+          .catch(function () { tryStatusFetch(idx + 1); });
       }
-      fetch(origin + '/api/tunnel/status', { method: 'GET', mode: 'cors', cache: 'no-store' })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-          if (d && d.url) apply(d.url);
-          else apply(base);
-        })
-        .catch(function () { apply(base); });
+      tryStatusFetch(0);
     })();
   </script>
 </body>
