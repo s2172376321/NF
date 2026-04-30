@@ -1,80 +1,159 @@
-<!doctype html>
-<html lang="zh-Hant">
+<!DOCTYPE html>
+<html lang="zh-TW">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>群組記事本入口</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>樸門農法入口</title>
   <style>
     body{margin:0;min-height:100vh;font-family:-apple-system,Segoe UI,Roboto,Noto Sans TC,sans-serif;
-         background:linear-gradient(160deg,#f4f7f0 0%,#e8efe4 50%,#f0ebe3 100%);padding:24px;box-sizing:border-box;}
-    .card{max-width:680px;margin:0 auto;background:#fff;border-radius:20px;padding:32px 28px;
-          box-shadow:0 12px 40px rgba(45,74,62,.12);text-align:center;}
-    h1{font-size:1.45rem;color:#2d4a3e;margin:0 0 10px;font-weight:600;}
-    .lead{font-size:.95rem;color:#64748b;margin:0 0 8px;line-height:1.55;}
-    .note{font-size:.85rem;color:#475569;margin:0 0 22px;line-height:1.55;text-align:left;
-          background:#f8fafc;border-radius:12px;padding:14px 16px;border-left:4px solid #1677ff;}
-    .btn-row{list-style:none;padding:0;margin:0 0 8px 0;}
-    .btn-row li+li{margin-top:12px;}
-    .btn{display:block;width:100%;padding:18px 16px;font-size:1.05rem;font-weight:600;color:#fff;text-decoration:none;
-         border-radius:14px;box-sizing:border-box;}
+    background:linear-gradient(160deg,#f4f7f0 0%,#e8efe4 50%,#f0ebe3 100%);
+    padding:max(24px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));
+    box-sizing:border-box;display:flex;align-items:center;justify-content:center;}
+    .card{max-width:min(400px,100%);width:100%;margin:0 auto;background:#fff;border-radius:16px;padding:22px 18px 20px;
+    box-shadow:0 8px 28px rgba(45,74,62,.1);text-align:center;}
+    h1{font-size:1.2rem;color:#2d4a3e;margin:0 0 18px;font-weight:600;letter-spacing:.02em;}
+    .btn{display:block;max-width:280px;width:100%;margin:0 auto;padding:14px 16px;font-size:.98rem;font-weight:600;color:#fff;text-decoration:none;
+    border-radius:12px;background:linear-gradient(90deg,#1677ff,#36a2ff);
+    box-shadow:0 4px 16px rgba(22,119,255,.2);}
     .btn:hover,.btn:focus{filter:brightness(1.05);outline:none;}
-    .btn-green{background:linear-gradient(90deg,#06C755,#00b96b);box-shadow:0 6px 20px rgba(6,199,85,.22);}
-    .btn-public{background:linear-gradient(90deg,#1677ff,#36a2ff);box-shadow:0 6px 20px rgba(22,119,255,.22);}
-    .tunnel-tip{font-size:.8rem;color:#64748b;margin:8px 0 0 0;line-height:1.45;}
-    .url{margin-top:14px;font-size:.82rem;color:#64748b;word-break:break-all;}
+    .url{max-width:100%;margin:14px auto 0;font-size:.78rem;color:#64748b;word-break:break-all;line-height:1.5;}
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>群組記事本入口</h1>
-    <p class="lead">沒有 Telegram 帳號也可透過此按鈕查看聊天室網頁。</p>
-    <p class="note">和採收主站相同類型之 Cloudflare 免費隧道（<code>*.trycloudflare.com</code>）。此連結對應本機 <strong>群組記事本 web_notebook</strong>（連接埠 <strong>8001</strong>）；公開網址不會出現 <code>:8001</code>，由隧道轉發到本機。</p>
-    <ul class="btn-row">
-      <li><a id="mainBtn" class="btn btn-green" href="https://modules-deadline-released-scanned.trycloudflare.com/?chat_id=-5186917090" target="_blank" rel="noopener noreferrer">進入群組記事本</a></li>
-      <li><a id="publicBtn" class="btn btn-public" href="https://modules-deadline-released-scanned.trycloudflare.com/?chat_id=-5186917090" target="_blank" rel="noopener noreferrer">公開入口（連結同步更新）</a></li>
-    </ul>
-    <p class="tunnel-tip">此面載入後，會向 web_notebook 的 <code>/api/tunnel/status</code> 取得最新連結（與本機 portal 相同來源）；若無法連線則使用本次推送之網址。</p>
-    <div id="liveUrl" class="url">https://modules-deadline-released-scanned.trycloudflare.com/?chat_id=-5186917090</div>
+    <h1>樸門農法入口</h1>
+    <a id="linkPort8001" class="btn" href="#">進入記事本</a>
+    <div class="url" id="tunnelUrl">載入中…</div>
   </div>
+
   <script>
-(function () {
-  var CHAT_ID = -5186917090;
-  function toChatRoomUrl(u) {
-    if (!u) return "";
-    if (!CHAT_ID) return u.replace(/\/+$/, "");
-    try {
-      var x = new URL(u.trim());
-      var path = (x.pathname || "/").replace(/\/+$/, "") || "/";
-      var has = x.searchParams.has("chat_id");
-      if (path !== "/" && path !== "/start" && !has) return u.replace(/\/+$/, "");
-      var o = new URL(x.origin + "/");
-      o.searchParams.set("chat_id", String(CHAT_ID));
-      return o.toString().replace(/\/+$/, "");
-    } catch (e) {
-      return u.replace(/\/+$/, "");
+    /**
+     * 與「網路菜車」相同方式：
+     * 緊急覆寫（免重新部署）：?p8001=https://xxxx.trycloudflare.com/start
+     * 或 ?tunnel= 同上
+     */
+    const CHAT_ID = -5186917090;
+    const API_HOST_PORT8001 = "https://168.110.208.210/?chat_id=-5186917090";
+    const ENTRY_STATUS_BASES = ["https://168.110.208.210/?chat_id=-5186917090"];
+
+    function toChatRoomUrl(u) {
+      if (!u) return "";
+      if (!CHAT_ID) return u.replace(/\/+$/, "");
+      try {
+        const x = new URL(u.trim());
+        const path = (x.pathname || "/").replace(/\/+$/, "") || "/";
+        const has = x.searchParams.has("chat_id");
+        if (path !== "/" && path !== "/start" && !has) return u.replace(/\/+$/, "");
+        const o = new URL(x.origin + "/");
+        o.searchParams.set("chat_id", String(CHAT_ID));
+        return o.toString().replace(/\/+$/, "");
+      } catch (e) {
+        return u.replace(/\/+$/, "");
+      }
     }
-  }
-  var ORIGIN = "https://modules-deadline-released-scanned.trycloudflare.com";
-  var FALLBACK = "https://modules-deadline-released-scanned.trycloudflare.com/?chat_id=-5186917090";
-  var mainBtn = document.getElementById("mainBtn");
-  var pubBtn = document.getElementById("publicBtn");
-  var urlEl = document.getElementById("liveUrl");
-  function setAll(u) {
-    if (!u) u = FALLBACK;
-    u = toChatRoomUrl(u);
-    mainBtn.href = u;
-    pubBtn.href = u;
-    urlEl.textContent = u;
-  }
-  if (!ORIGIN) {
-    setAll(FALLBACK);
-    return;
-  }
-  fetch(ORIGIN + "/api/tunnel/status", { method: "GET", mode: "cors", cache: "no-store" })
-    .then(function (r) { return r.json(); })
-    .then(function (d) { if (d && d.url) setAll(d.url); else setAll(FALLBACK); })
-    .catch(function () { setAll(FALLBACK); });
-})();
+
+    function _allowedTunnelUrl(s) {
+      if (!s || typeof s !== 'string') return false;
+      try {
+        const u = new URL(s.trim());
+        if (u.protocol !== 'https:') return false;
+        const h = (u.hostname || '').toLowerCase();
+        if (h.endsWith('.trycloudflare.com')) return true;
+        if (h.includes('ngrok') && (
+          h.endsWith('.ngrok-free.app') || h.endsWith('.ngrok.io') || h.endsWith('.ngrok.app')
+        )) return true;
+        return false;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function _originOf(u) {
+      try { return new URL(u.trim()).origin; } catch (e) { return ""; }
+    }
+
+    (function(){
+      const linkEl = document.getElementById('linkPort8001');
+      const urlEl = document.getElementById('tunnelUrl');
+      if (!linkEl || !urlEl) return;
+      const qs = new URLSearchParams(window.location.search || '');
+      const fromQuery = (qs.get('p8001') || qs.get('tunnel') || '').trim().replace(/\/+$/, '');
+      const tryList = [];
+      if (fromQuery && _allowedTunnelUrl(fromQuery)) {
+        tryList.push(fromQuery);
+      }
+      ENTRY_STATUS_BASES.forEach(function (u) {
+        var t = String(u || '').trim().replace(/\/+$/, '');
+        if (!t || tryList.indexOf(t) >= 0) return;
+        tryList.push(t);
+      });
+
+      function apply(raw) {
+        const room = toChatRoomUrl(raw);
+        if (room) {
+          linkEl.href = room;
+          urlEl.textContent = room;
+        } else {
+          linkEl.addEventListener('click', function(e){
+            e.preventDefault();
+            alert('入口網址尚未設定，請稍後再試。');
+          });
+          urlEl.textContent = '尚未設定外網連結';
+        }
+      }
+
+      if (!tryList.length) {
+        apply('');
+        return;
+      }
+      /* 立即顯示頁面內嵌網址，避免因請求卡住永遠停在「載入中」 */
+      apply(tryList[0]);
+
+      function fetchTunnelStatus(originBase, timeoutMs) {
+        var ctrl = new AbortController();
+        var ms = timeoutMs || 8000;
+        var tid = setTimeout(function () { ctrl.abort(); }, ms);
+        return fetch(originBase + '/api/tunnel/status', {
+          method: 'GET',
+          mode: 'cors',
+          cache: 'no-store',
+          signal: ctrl.signal,
+        }).finally(function () {
+          clearTimeout(tid);
+        });
+      }
+
+      function tryStatusFetch(idx) {
+        if (idx >= tryList.length) {
+          return;
+        }
+        var cand = tryList[idx];
+        var o = _originOf(cand);
+        if (!o) {
+          tryStatusFetch(idx + 1);
+          return;
+        }
+        fetchTunnelStatus(o, 8000)
+          .then(function (r) {
+            if (!r || !r.ok) {
+              tryStatusFetch(idx + 1);
+              return;
+            }
+            return r.json();
+          })
+          .then(function (d) {
+            if (d && d.url) {
+              apply(d.url);
+              return;
+            }
+            tryStatusFetch(idx + 1);
+          })
+          .catch(function () {
+            tryStatusFetch(idx + 1);
+          });
+      }
+      tryStatusFetch(0);
+    })();
   </script>
 </body>
 </html>
